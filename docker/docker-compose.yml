@@ -1,0 +1,32 @@
+# Docker compose for the ft_linux build environment.
+# Run via `make build` / `make shell` from the project root.
+
+services:
+  builder:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: ft_linux/builder:latest
+    container_name: ft_linux_builder
+    # Privileged is required to:
+    #   - attach the disk image via loop devices
+    #   - mount partitions inside the container
+    #   - chroot into the LFS tree
+    # We never touch host kernel modules.
+    privileged: true
+    # Source tree is read-only; the only writable host path is ../build via /output.
+    # /mnt/lfs is just a directory inside the container — we mount the disk
+    # image's root partition over it from inside the build scripts. Using a
+    # named volume here causes a mountpoint collision with the real disk.
+    volumes:
+      - ..:/project:ro
+      - ../build:/output
+    working_dir: /project
+    environment:
+      STUDENT_LOGIN: dlesieur
+      KERNEL_VERSION: 6.6.32
+      LFS: /mnt/lfs
+      LFS_TGT: x86_64-lfs-linux-gnu
+      MAKEFLAGS: "-j$(nproc)"
+    tty: true
+    stdin_open: true

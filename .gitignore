@@ -1,0 +1,26 @@
+# Build artifacts — never commit, the disk image is 20 GB
+build/
+*.img
+*.iso
+*.qcow2
+*.vdi
+
+# Logs
+*.log
+logs/
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Local overrides
+.env
+.env.local
+.claude/settings.local.json
