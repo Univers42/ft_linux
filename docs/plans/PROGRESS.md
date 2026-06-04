@@ -14,6 +14,26 @@ resuming. Format per entry:
 
 ---
 
+## 2026-06-04 — M2: full Ch.8 wiring done; B1 build launched under hellish-in-chroot
+- did: heredoc fix landed (vendor/42sh 09f6f41, 1738 tests) + image republished (both
+  hellish fixes). Ch.8 recipes regenerated for LFS 12.1 (build-system-lib.sh, 26 build_*
+  fns reusing toolchain version vars; packages.sh Ch.8 + MD5 + CH8_SOURCES). Wrote the
+  in-chroot driver: chroot-lib.sh (unpack/fetch resolve PRE-STAGED /sources tarballs — no
+  network; watchdog guard; -j heuristic) + build-all.sh (per-pkg guarded hellish, stamped,
+  order derived from build-system-lib.sh). 02-build-system.sh: prefetch CH8_SOURCES into the
+  image's /sources, stage hellish+libs+watchdog+scripts, smoke-test hellish-in-chroot, run
+  build-all. Verified heredoc fix unblocked write_etc_files; fixed a `set -e && ` pitfall.
+- commits: c54d0d7 (recipes+bump), e51c95b (driver), plus chroot-lib/build-all/prefetch.
+- result: **`make phase-packages` launched (background)** — prefetch (~1GB) → hellish-in-
+  chroot smoke → build B1 (man-pages..gcc, ~25 pkgs). Long (glibc+gcc ~20min each). Each
+  package guarded (idle 30m/total 3h) + stamped (re-entrant via /sources/.stamps).
+- watch for: recipe bugs (LFS 12.1 exactness), more hellish gaps surfacing in recipes
+  (heredocs/continuations now fixed), gcc test suite needing a `tester` user (test is
+  non-fatal `|| true`, so likely OK; add tester after shadow if it errors), disk space
+  (40GB host; image 20GB — monitor). Fix per failure (script bug → fix script; hellish
+  divergence vs bash → fix hellish per .claude/hellish-workflow.md), re-run (stamps resume).
+- next: B1 green → B2/B3 recipes (agent) → strip/cleanup → M7 (kernel/boot/net/shasum).
+
 ## 2026-06-04 — M2 in progress: chroot driver done; heredoc bug + Ch.8 recipes underway
 - did: rewrote `scripts/02-build-system.sh` (commit e51c95b) — real LFS Ch.7 chroot prep
   (virtual FS, dir skeleton, /etc/{passwd,group,hosts}, /dev nodes), **stages hellish +

@@ -21,7 +21,8 @@ build_man_pages() {
     cd "$src"
     # Remove crypt man pages — provided by libxcrypt
     rm -v man3/crypt*
-    make prefix=/usr install
+    # GIT=false: the chroot has no git; man-pages derives dates from it otherwise.
+    make -R GIT=false prefix=/usr MANDIR=/usr/share/man install
     rm -rf "$src"
 }
 
