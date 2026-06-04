@@ -83,7 +83,7 @@ build_gcc_pass1() {
     # The book's "limits.h" rebuild trick — needed for glibc-build later
     cd "$src"
     cat gcc/limitx.h gcc/glimits.h gcc/limity.h > \
-        "$(dirname "$("$LFS/tools/bin/$LFS_TGT-gcc" -print-libgcc-file-name)")/install-tools/include/limits.h"
+        "$(dirname "$("$LFS/tools/bin/$LFS_TGT-gcc" -print-libgcc-file-name)")/include/limits.h"
 
     rm -rf "$src"
 }
