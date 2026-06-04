@@ -196,10 +196,11 @@ build_ncurses() {
     make -C include
     make -C progs tic
     popd
-    with_clean_build "$src"
-    ../configure --prefix=/usr \
+    # Cross-build in $src itself (NOT a fresh build/, which would delete the
+    # host tic we just built and is needed by TIC_PATH below).
+    ./configure --prefix=/usr \
         --host="$LFS_TGT" \
-        --build="$(../config.guess)" \
+        --build="$(./config.guess)" \
         --mandir=/usr/share/man \
         --with-manpage-format=normal \
         --with-shared \
@@ -207,10 +208,11 @@ build_ncurses() {
         --with-cxx-shared \
         --without-debug \
         --without-ada \
-        --disable-stripping
+        --disable-stripping \
+        --enable-widec
     make
     make DESTDIR="$LFS" TIC_PATH="$(pwd)/build/progs/tic" install
-    ln -sv libncursesw.so "$LFS/usr/lib/libncurses.so"
+    ln -sfv libncursesw.so "$LFS/usr/lib/libncurses.so"
     sed -e 's/^#if.*XOPEN.*$/#if 1/' -i "$LFS/usr/include/curses.h"
     rm -rf "$src"
 }
@@ -260,9 +262,10 @@ build_file() {
         --disable-zlib
     make
     popd
-    with_clean_build "$src"
-    ../configure --prefix=/usr --host="$LFS_TGT" --build="$(../config.guess)"
-    make FILE_COMPILE="$(pwd)/../build/src/file"
+    # Cross-build in $src (NOT a fresh build/, which would delete the host
+    # `file` that FILE_COMPILE below needs).
+    ./configure --prefix=/usr --host="$LFS_TGT" --build="$(./config.guess)"
+    make FILE_COMPILE="$(pwd)/build/src/file"
     make DESTDIR="$LFS" install
     rm -v "$LFS/usr/lib/libmagic.la"
     rm -rf "$src"
