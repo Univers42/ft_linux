@@ -475,8 +475,8 @@ build_dejagnu() {
     src="$(unpack "$DEJAGNU_URL")"
     with_clean_build "$src"
     ../configure --prefix=/usr
-    makeinfo --html --no-split -o doc/dejagnu.html ../doc/dejagnu.texi || true
-    makeinfo --plaintext       -o doc/dejagnu.txt  ../doc/dejagnu.texi || true
+    makeinfo --html --no-split -o doc/dejagnu.html doc/dejagnu.texi || true
+    makeinfo --plaintext       -o doc/dejagnu.txt  doc/dejagnu.texi || true
     make check || true
     make install
     install -v -dm755 "/usr/share/doc/dejagnu-${DEJAGNU_VERSION}"
@@ -785,7 +785,7 @@ build_sed() {
     su tester -c "PATH=$PATH make check" || true
     make install
     install -d -m755 "/usr/share/doc/sed-${SED_VERSION}"
-    install -m644 ../doc/sed.html "/usr/share/doc/sed-${SED_VERSION}"
+    install -m644 doc/sed.html "/usr/share/doc/sed-${SED_VERSION}" 2>/dev/null || true
     rm -rf "$src"
 }
 
@@ -918,7 +918,7 @@ build_expat() {
     make
     make check || true
     make install
-    install -v -m644 ../doc/*.{html,css} \
+    install -v -m644 doc/*.{html,css} \
         "/usr/share/doc/expat-${EXPAT_VERSION}" 2>/dev/null || true
     rm -rf "$src"
 }
