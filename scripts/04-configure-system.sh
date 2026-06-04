@@ -181,21 +181,16 @@ ln -sf /usr/share/zoneinfo/UTC "$LFS/etc/localtime" 2>/dev/null || true
 # are listed; the last one listed becomes the "preferred" console for /dev/console).
 info "Installing GRUB to $LOOP (i386-pc, /boot = gpt2)"
 mkdir -p "$LFS/boot/grub"
-# NB: use the UNbraced $KERNEL_FULL here, not ${KERNEL_FULL}. hellish mangles a
-# braced ${VAR} inside a heredoc body to the literal "{{VAR" (bash expands it
-# correctly) — a separate hellish heredoc bug. Unbraced $KERNEL_FULL expands
-# correctly under BOTH bash and hellish, so the kernel path written here matches
-# the real /boot/vmlinuz-$KERNEL_FULL produced by phase 3.
 cat > "$LFS/boot/grub/grub.cfg" <<EOF
 set default=0
 set timeout=5
 
-menuentry "ft_linux $KERNEL_FULL" {
+menuentry "ft_linux ${KERNEL_FULL}" {
     set root=(hd0,gpt2)
     # No initramfs → the kernel cannot resolve root=LABEL= (that needs udev). The
     # QEMU virtio disk is /dev/vda, so root is its 4th partition. virtio-blk + GPT
     # + ext4 are built into the kernel (see 03-build-kernel.sh KOPTS).
-    linux /vmlinuz-$KERNEL_FULL root=/dev/vda4 ro console=tty0 console=ttyS0,115200
+    linux /vmlinuz-${KERNEL_FULL} root=/dev/vda4 ro console=tty0 console=ttyS0,115200
     # initrd not used — we rely on built-in kernel drivers (defconfig + virtio).
 }
 EOF
