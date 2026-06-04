@@ -293,13 +293,13 @@ CHECK_URL="https://github.com/libcheck/check/releases/download/${CHECK_VERSION}/
 CHECK_MD5=50fcafcecde5a380415b12e9c574e0b2
 
 # Ch.8 Diffutils: reuse DIFFUTILS_VERSION=3.10 / DIFFUTILS_URL above.
-DIFFUTILS_MD5=# TODO md5
+DIFFUTILS_MD5="" # TODO md5
 
 # Ch.8 Gawk: reuse GAWK_VERSION=5.3.0 / GAWK_URL above.
-GAWK_MD5=# TODO md5
+GAWK_MD5="" # TODO md5
 
 # Ch.8 Findutils: reuse FINDUTILS_VERSION=4.9.0 / FINDUTILS_URL above.
-FINDUTILS_MD5=# TODO md5
+FINDUTILS_MD5="" # TODO md5
 
 GROFF_VERSION=1.23.0
 GROFF_URL="https://ftp.gnu.org/gnu/groff/groff-${GROFF_VERSION}.tar.gz"
@@ -310,7 +310,7 @@ GRUB_URL="https://ftp.gnu.org/gnu/grub/grub-${GRUB_VERSION}.tar.xz"
 GRUB_MD5=60c564b1bdc39d8e43b3aab4bc0fb140
 
 # Ch.8 Gzip: reuse GZIP_VERSION=1.13 / GZIP_URL above.
-GZIP_MD5=# TODO md5
+GZIP_MD5="" # TODO md5
 
 IPROUTE2_VERSION=6.7.0
 IPROUTE2_URL="https://www.kernel.org/pub/linux/utils/net/iproute2/iproute2-${IPROUTE2_VERSION}.tar.xz"
@@ -327,13 +327,13 @@ LIBPIPELINE_URL="https://download.savannah.gnu.org/releases/libpipeline/libpipel
 LIBPIPELINE_MD5=1a48b5771b9f6c790fb4efdb1ac71342
 
 # Ch.8 Make: reuse MAKE_VERSION=4.4.1 / MAKE_URL above.
-MAKE_MD5=# TODO md5
+MAKE_MD5="" # TODO md5
 
 # Ch.8 Patch: reuse PATCH_VERSION=2.7.6 / PATCH_URL above.
-PATCH_MD5=# TODO md5
+PATCH_MD5="" # TODO md5
 
 # Ch.8 Tar: reuse TAR_VERSION=1.35 / TAR_URL above.
-TAR_MD5=# TODO md5
+TAR_MD5="" # TODO md5
 
 # Ch.8 Texinfo: reuse TEXINFO_VERSION=7.1 / TEXINFO_URL / TEXINFO_MD5 above.
 
@@ -345,7 +345,7 @@ VIM_MD5=79dfe62be5d347b1325cbd5ce2a1f9b3
 # Version 3.2.11 is the last release; sourced from GitHub.
 EUDEV_VERSION=3.2.11
 EUDEV_URL="https://github.com/eudev-project/eudev/releases/download/v${EUDEV_VERSION}/eudev-${EUDEV_VERSION}.tar.gz"
-EUDEV_MD5=# TODO md5
+EUDEV_MD5="" # TODO md5
 # udev-lfs helper rules tarball (same tarball used by LFS 12.1 udev/eudev installs).
 UDEV_LFS_VERSION=20171102
 UDEV_LFS_URL="https://anduin.linuxfromscratch.org/LFS/udev-lfs-${UDEV_LFS_VERSION}.tar.xz"
