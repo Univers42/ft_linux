@@ -1049,9 +1049,11 @@ build_kmod() {
     local src
     src="$(unpack "$KMOD_URL")"
     with_clean_build "$src"
+    # --without-openssl: OpenSSL is not in this project's package set; kmod only
+    # uses libcrypto for module-signature verification, which we don't need.
     ../configure --prefix=/usr \
                  --sysconfdir=/etc \
-                 --with-openssl \
+                 --without-openssl \
                  --with-xz \
                  --with-zstd \
                  --with-zlib
