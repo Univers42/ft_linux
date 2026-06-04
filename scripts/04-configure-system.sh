@@ -190,8 +190,22 @@ EOF
 # table and ext2 to read /boot (ext4 is backward-compatible with the ext2
 # module for the purpose of reading the kernel image and grub files).
 # GRUB mis-detects the kpartx device-mapper partition (/dev/mapper/loopXpN) as an
-# LVM volume ("disk lvm/loopXpN not found"). Pin an explicit device.map so GRUB
-# treats the loop device as (hd0) and the /boot partition as (hd0,gptN).
+# LVM volume ("disk lvm/loopXpN not found"). Give the loop REAL kernel partition
+# nodes (/dev/loopXpN) and re-mount /boot from one, so grub-probe sees a plain
+# (hd0,gptN) partition instead of a device-mapper node.
+lp="$(basename "$LOOP")"
+partx -a "$LOOP" 2>/dev/null || true
+for pd in "/sys/block/$lp/$lp"p*; do
+    [ -d "$pd" ] || continue
+    pp="$(basename "$pd")"
+    dm="$(cat "$pd/dev")"
+    [ -b "/dev/$pp" ] || mknod "/dev/$pp" b "${dm%%:*}" "${dm##*:}"
+done
+if [ -b "/dev/${lp}p2" ]; then
+    umount "$LFS/boot" 2>/dev/null || true
+    mount "/dev/${lp}p2" "$LFS/boot"
+fi
+# Pin an explicit device.map so GRUB treats the loop device as (hd0).
 mkdir -p "$LFS/boot/grub"
 printf '(hd0) %s\n' "$LOOP" >"$LFS/boot/grub/device.map"
 # Use the TARGET's grub-install (built in Ch.8) inside the chroot — the builder
