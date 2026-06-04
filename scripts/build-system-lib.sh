@@ -736,3 +736,770 @@ build_gcc() {
 
     rm -rf "$src"
 }
+
+# ===========================================================================
+# Chapter 8 — second half (ncurses … man-db), LFS 12.1 SysV order
+# ===========================================================================
+
+build_ncurses() {
+    # LFS 12.1 §8.29 — Ncurses-6.4-20230520. Wide-character (UTF-8) build.
+    # Install the real shared lib first via DESTDIR, then copy everything else.
+    local src
+    src="$(unpack "$NCURSES_URL")"
+    cd "$src"
+    ./configure --prefix=/usr \
+                --mandir=/usr/share/man \
+                --with-shared \
+                --without-debug \
+                --without-normal \
+                --with-cxx-shared \
+                --enable-pc-files \
+                --enable-widec \
+                --with-pkg-config-libdir=/usr/lib/pkgconfig
+    make
+    make DESTDIR="$PWD/dest" install
+    install -vm755 dest/usr/lib/libncursesw.so.6.4 /usr/lib
+    rm -v dest/usr/lib/libncursesw.so.6.4
+    sed -e 's/^#if.*XOPEN.*$/#if 1/' \
+        -i dest/usr/include/curses.h
+    cp -av dest/* /
+    # Non-wide compat symlinks (so code linking -lncurses finds the wide lib)
+    for lib in ncurses form panel menu; do
+        ln -sfv "lib${lib}w.so" /usr/lib/lib${lib}.so
+        ln -sfv "${lib}w.pc"    /usr/lib/pkgconfig/${lib}.pc
+    done
+    ln -sfv libncursesw.so /usr/lib/libcurses.so
+    cp -v -R doc -T "/usr/share/doc/ncurses-${NCURSES_VERSION}" 2>/dev/null || true
+    rm -rf "$src"
+}
+
+build_sed() {
+    # LFS 12.1 §8.30 — Sed-4.9.
+    local src
+    src="$(unpack "$SED_URL")"
+    with_clean_build "$src"
+    ../configure --prefix=/usr
+    make
+    make html
+    chown -R tester . 2>/dev/null || true
+    su tester -c "PATH=$PATH make check" || true
+    make install
+    install -d -m755 "/usr/share/doc/sed-${SED_VERSION}"
+    install -m644 ../doc/sed.html "/usr/share/doc/sed-${SED_VERSION}"
+    rm -rf "$src"
+}
+
+build_psmisc() {
+    # LFS 12.1 §8.31 — Psmisc-23.6.
+    local src
+    src="$(unpack "$PSMISC_URL")"
+    with_clean_build "$src"
+    ../configure --prefix=/usr
+    make
+    make check || true
+    make install
+    rm -rf "$src"
+}
+
+build_gettext() {
+    # LFS 12.1 §8.32 — Gettext-0.22.4 (final, replaces Ch.7 _tmp).
+    local src
+    src="$(unpack "$GETTEXT_URL")"
+    with_clean_build "$src"
+    ../configure --prefix=/usr \
+                 --disable-static \
+                 --docdir="/usr/share/doc/gettext-${GETTEXT_VERSION}"
+    make
+    make check || true
+    make install
+    chmod -v 0755 /usr/lib/preloadable_libintl.so 2>/dev/null || true
+    rm -rf "$src"
+}
+
+build_bison() {
+    # LFS 12.1 §8.33 — Bison-3.8.2 (final, replaces Ch.7 _tmp).
+    local src
+    src="$(unpack "$BISON_URL")"
+    with_clean_build "$src"
+    ../configure --prefix=/usr \
+                 --docdir="/usr/share/doc/bison-${BISON_VERSION}"
+    make
+    make check || true
+    make install
+    rm -rf "$src"
+}
+
+build_grep() {
+    # LFS 12.1 §8.34 — Grep-3.11.
+    local src
+    src="$(unpack "$GREP_URL")"
+    cd "$src"
+    sed -i "s/echo/#echo/" src/egrep.sh
+    ./configure --prefix=/usr
+    make
+    make check || true
+    make install
+    rm -rf "$src"
+}
+
+build_bash() {
+    # LFS 12.1 §8.35 — Bash-5.2.21 (final, replaces Ch.6 cross-built bash).
+    local src
+    src="$(unpack "$BASH_URL")"
+    cd "$src"
+    patch -Np1 -i "../bash-5.2.21-upstream_fixes-1.patch"
+    ./configure --prefix=/usr \
+                --without-bash-malloc \
+                --with-installed-readline \
+                --docdir="/usr/share/doc/bash-${BASH_VERSION}"
+    make
+    chown -R tester . 2>/dev/null || true
+    su -s /usr/bin/expect tester << 'BASHTEST' || true
+set timeout -1
+spawn make tests
+expect eof
+lassign [wait] _ _ _ value
+exit $value
+BASHTEST
+    make install
+    # NOTE: LFS's interactive `exec /bin/bash --login` is intentionally omitted —
+    # in the automated build-all loop it would replace (hijack) the running shell.
+    rm -rf "$src"
+}
+
+build_libtool() {
+    # LFS 12.1 §8.36 — Libtool-2.4.7.
+    local src
+    src="$(unpack "$LIBTOOL_URL")"
+    with_clean_build "$src"
+    ../configure --prefix=/usr
+    make
+    make -k check || true
+    make install
+    rm -fv /usr/lib/libltdl.a
+    rm -rf "$src"
+}
+
+build_gdbm() {
+    # LFS 12.1 §8.37 — GDBM-1.23.
+    local src
+    src="$(unpack "$GDBM_URL")"
+    with_clean_build "$src"
+    ../configure --prefix=/usr \
+                 --disable-static \
+                 --enable-libgdbm-compat
+    make
+    make check || true
+    make install
+    rm -rf "$src"
+}
+
+build_gperf() {
+    # LFS 12.1 §8.38 — Gperf-3.1.
+    local src
+    src="$(unpack "$GPERF_URL")"
+    with_clean_build "$src"
+    ../configure --prefix=/usr \
+                 --docdir="/usr/share/doc/gperf-${GPERF_VERSION}"
+    make
+    make -j1 check || true
+    make install
+    rm -rf "$src"
+}
+
+build_expat() {
+    # LFS 12.1 §8.39 — Expat-2.6.0.
+    local src
+    src="$(unpack "$EXPAT_URL")"
+    with_clean_build "$src"
+    ../configure --prefix=/usr \
+                 --disable-static \
+                 --docdir="/usr/share/doc/expat-${EXPAT_VERSION}"
+    make
+    make check || true
+    make install
+    install -v -m644 ../doc/*.{html,css} \
+        "/usr/share/doc/expat-${EXPAT_VERSION}" 2>/dev/null || true
+    rm -rf "$src"
+}
+
+build_inetutils() {
+    # LFS 12.1 §8.40 — Inetutils-2.5.
+    local src
+    src="$(unpack "$INETUTILS_URL")"
+    with_clean_build "$src"
+    ../configure --prefix=/usr \
+                 --bindir=/usr/bin \
+                 --localstatedir=/var \
+                 --disable-logger \
+                 --disable-whois \
+                 --disable-rcp \
+                 --disable-rexec \
+                 --disable-rlogin \
+                 --disable-rsh \
+                 --disable-servers
+    make
+    make check || true
+    make install
+    mv -v /usr/{,s}bin/ifconfig 2>/dev/null || true
+    rm -rf "$src"
+}
+
+build_less() {
+    # LFS 12.1 §8.41 — Less-643.
+    local src
+    src="$(unpack "$LESS_URL")"
+    with_clean_build "$src"
+    ../configure --prefix=/usr \
+                 --sysconfdir=/etc
+    make
+    make check || true
+    make install
+    rm -rf "$src"
+}
+
+build_perl() {
+    # LFS 12.1 §8.42 — Perl-5.38.2 (final, replaces Ch.7 _tmp).
+    local src
+    src="$(unpack "$PERL_URL")"
+    cd "$src"
+    export BUILD_ZLIB=False
+    export BUILD_BZIP2=0
+    sh Configure -des \
+                 -Dprefix=/usr \
+                 -Dvendorprefix=/usr \
+                 -Dprivlib=/usr/lib/perl5/5.38/core_perl \
+                 -Darchlib=/usr/lib/perl5/5.38/core_perl \
+                 -Dsitelib=/usr/lib/perl5/5.38/site_perl \
+                 -Dsitearch=/usr/lib/perl5/5.38/site_perl \
+                 -Dvendorlib=/usr/lib/perl5/5.38/vendor_perl \
+                 -Dvendorarch=/usr/lib/perl5/5.38/vendor_perl \
+                 -Dman1dir=/usr/share/man/man1 \
+                 -Dman3dir=/usr/share/man/man3 \
+                 -Dpager="/usr/bin/less -isR" \
+                 -Duseshrplib \
+                 -Dusethreads
+    make
+    TEST_JOBS="$(nproc)" make test_harness || true
+    make install
+    unset BUILD_ZLIB BUILD_BZIP2
+    rm -rf "$src"
+}
+
+build_xml_parser() {
+    # LFS 12.1 §8.43 — XML::Parser-2.47 (Perl Expat interface).
+    # No configure script — uses Perl's MakeMaker.
+    local src
+    src="$(unpack "$XML_PARSER_URL")"
+    cd "$src"
+    perl Makefile.PL
+    make
+    make test || true
+    make install
+    rm -rf "$src"
+}
+
+build_intltool() {
+    # LFS 12.1 §8.44 — Intltool-0.51.0.
+    local src
+    src="$(unpack "$INTLTOOL_URL")"
+    cd "$src"
+    # Fix perl-5.22+ incompatibility in intltool-update.in
+    sed -i 's:\\\${:\\$\\{:' intltool-update.in
+    ./configure --prefix=/usr
+    make
+    make check || true
+    make install
+    install -v -Dm644 doc/I18N-HOWTO \
+        "/usr/share/doc/intltool-${INTLTOOL_VERSION}/I18N-HOWTO"
+    rm -rf "$src"
+}
+
+build_autoconf() {
+    # LFS 12.1 §8.45 — Autoconf-2.72.
+    local src
+    src="$(unpack "$AUTOCONF_URL")"
+    with_clean_build "$src"
+    ../configure --prefix=/usr
+    make
+    make check || true
+    make install
+    rm -rf "$src"
+}
+
+build_automake() {
+    # LFS 12.1 §8.46 — Automake-1.16.5.
+    local src
+    src="$(unpack "$AUTOMAKE_URL")"
+    with_clean_build "$src"
+    ../configure --prefix=/usr \
+                 --docdir="/usr/share/doc/automake-${AUTOMAKE_VERSION}"
+    make
+    # t/subobj.sh is known to fail; run with at least 4 parallel jobs
+    local jobs
+    jobs="$(nproc)"
+    make -j"$((jobs > 4 ? jobs : 4))" check || true
+    make install
+    rm -rf "$src"
+}
+
+build_kmod() {
+    # LFS 12.1 §8.47 — Kmod-31.
+    local src
+    src="$(unpack "$KMOD_URL")"
+    with_clean_build "$src"
+    ../configure --prefix=/usr \
+                 --sysconfdir=/etc \
+                 --with-openssl \
+                 --with-xz \
+                 --with-zstd \
+                 --with-zlib
+    make
+    make install
+    # Compat symlinks for traditional module-init-tools names
+    for target in depmod insmod modinfo modprobe rmmod; do
+        ln -sfv ../bin/kmod /usr/sbin/$target
+    done
+    ln -sfv kmod /usr/bin/lsmod
+    rm -rf "$src"
+}
+
+build_elfutils() {
+    # LFS 12.1 §8.48 — libelf (from elfutils-0.190).
+    # Only the libelf component is installed; debuginfod is disabled.
+    local src
+    src="$(unpack "$ELFUTILS_URL")"
+    with_clean_build "$src"
+    ../configure --prefix=/usr \
+                 --disable-debuginfod \
+                 --enable-libdebuginfod=dummy
+    make
+    make check || true
+    make -C libelf install
+    install -vm644 config/libelf.pc /usr/lib/pkgconfig
+    rm -f /usr/lib/libelf.a
+    rm -rf "$src"
+}
+
+build_coreutils() {
+    # LFS 12.1 §8.49 — Coreutils-9.4.
+    local src
+    src="$(unpack "$COREUTILS_URL")"
+    cd "$src"
+    patch -Np1 -i "../coreutils-9.4-i18n-1.patch"
+    sed -e '/n_out += n_hold/,+4 s|.*bufsize.*|//&|' -i src/split.c
+    autoreconf -fiv
+    FORCE_UNSAFE_CONFIGURE=1 ./configure \
+                --prefix=/usr \
+                --enable-no-install-program=kill,uptime
+    make
+    make NON_ROOT_USERNAME=tester check-root || true
+    groupadd -g 102 dummy -U tester 2>/dev/null || true
+    chown -R tester . 2>/dev/null || true
+    su tester -c "PATH=$PATH make RUN_EXPENSIVE_TESTS=yes check" || true
+    groupdel dummy 2>/dev/null || true
+    make install
+    mv -v /usr/bin/chroot /usr/sbin
+    mv -v /usr/share/man/man1/chroot.1 /usr/share/man/man8/chroot.8
+    sed -i 's/"1"/"8"/' /usr/share/man/man8/chroot.8
+    rm -rf "$src"
+}
+
+build_check() {
+    # LFS 12.1 §8.50 — Check-0.15.2 (unit-test framework for C).
+    local src
+    src="$(unpack "$CHECK_URL")"
+    with_clean_build "$src"
+    ../configure --prefix=/usr \
+                 --disable-static
+    make
+    make check || true
+    make docdir="/usr/share/doc/check-${CHECK_VERSION}" install
+    rm -rf "$src"
+}
+
+build_diffutils() {
+    # LFS 12.1 §8.51 — Diffutils-3.10.
+    local src
+    src="$(unpack "$DIFFUTILS_URL")"
+    with_clean_build "$src"
+    ../configure --prefix=/usr
+    make
+    make check || true
+    make install
+    rm -rf "$src"
+}
+
+build_gawk() {
+    # LFS 12.1 §8.52 — Gawk-5.3.0.
+    local src
+    src="$(unpack "$GAWK_URL")"
+    cd "$src"
+    sed -i 's/extras//' Makefile.in
+    ./configure --prefix=/usr
+    make
+    chown -R tester . 2>/dev/null || true
+    su tester -c "PATH=$PATH make check" || true
+    rm -f /usr/bin/gawk-5.3.0 2>/dev/null || true
+    make install
+    ln -sv gawk.1 /usr/share/man/man1/awk.1
+    mkdir -pv "/usr/share/doc/gawk-${GAWK_VERSION}"
+    cp -v doc/{awkforai.txt,*.{eps,pdf,jpg}} \
+        "/usr/share/doc/gawk-${GAWK_VERSION}" 2>/dev/null || true
+    rm -rf "$src"
+}
+
+build_findutils() {
+    # LFS 12.1 §8.53 — Findutils-4.9.0.
+    local src
+    src="$(unpack "$FINDUTILS_URL")"
+    with_clean_build "$src"
+    ../configure --prefix=/usr \
+                 --localstatedir=/var/lib/locate
+    make
+    chown -R tester . 2>/dev/null || true
+    su tester -c "PATH=$PATH make check" || true
+    make install
+    rm -rf "$src"
+}
+
+build_groff() {
+    # LFS 12.1 §8.54 — Groff-1.23.0.
+    # PAGE defaults to A4; override at build time with PAGE=letter if needed.
+    local src
+    src="$(unpack "$GROFF_URL")"
+    with_clean_build "$src"
+    PAGE=A4 ../configure --prefix=/usr
+    make
+    make check || true
+    make install
+    rm -rf "$src"
+}
+
+build_grub() {
+    # LFS 12.1 §8.55 — GRUB-2.12.
+    # Unset any CFLAGS/LDFLAGS that could confuse the build.
+    local src
+    src="$(unpack "$GRUB_URL")"
+    cd "$src"
+    unset CFLAGS CPPFLAGS CXXFLAGS LDFLAGS
+    # shellcheck disable=SC2016
+    echo 'depends bli part_gpt' > grub-core/extra_deps.lst
+    ./configure --prefix=/usr \
+                --sysconfdir=/etc \
+                --disable-efiemu \
+                --disable-werror
+    make
+    make install
+    mv -v /etc/bash_completion.d/grub \
+          /usr/share/bash-completion/completions 2>/dev/null || true
+    rm -rf "$src"
+}
+
+build_gzip() {
+    # LFS 12.1 §8.56 — Gzip-1.13.
+    local src
+    src="$(unpack "$GZIP_URL")"
+    with_clean_build "$src"
+    ../configure --prefix=/usr
+    make
+    make check || true
+    make install
+    rm -rf "$src"
+}
+
+build_iproute2() {
+    # LFS 12.1 §8.57 — IPRoute2-6.7.0. No autoconf — uses its own Makefile.
+    local src
+    src="$(unpack "$IPROUTE2_URL")"
+    cd "$src"
+    sed -i /ARPD/d Makefile
+    rm -fv man/man8/arpd.8
+    make NETNS_RUN_DIR=/run/netns
+    make SBINDIR=/usr/sbin install
+    mkdir -pv "/usr/share/doc/iproute2-${IPROUTE2_VERSION}"
+    cp -v COPYING README* "/usr/share/doc/iproute2-${IPROUTE2_VERSION}"
+    rm -rf "$src"
+}
+
+build_kbd() {
+    # LFS 12.1 §8.58 — Kbd-2.6.4.
+    local src
+    src="$(unpack "$KBD_URL")"
+    cd "$src"
+    patch -Np1 -i "../kbd-2.6.4-backspace-1.patch"
+    sed -i '/RESIZECONS_PROGS=/s/yes/no/' configure
+    sed -i 's/resizecons.8 //' docs/man/man8/Makefile.in
+    ./configure --prefix=/usr \
+                --disable-vlock
+    make
+    make check || true
+    make install
+    cp -R -v docs/doc -T "/usr/share/doc/kbd-${KBD_VERSION}" 2>/dev/null || true
+    rm -rf "$src"
+}
+
+build_libpipeline() {
+    # LFS 12.1 §8.59 — Libpipeline-1.5.7.
+    local src
+    src="$(unpack "$LIBPIPELINE_URL")"
+    with_clean_build "$src"
+    ../configure --prefix=/usr
+    make
+    make check || true
+    make install
+    rm -rf "$src"
+}
+
+build_make() {
+    # LFS 12.1 §8.60 — Make-4.4.1 (final, replaces Ch.6 cross-built make).
+    local src
+    src="$(unpack "$MAKE_URL")"
+    with_clean_build "$src"
+    ../configure --prefix=/usr
+    make
+    chown -R tester . 2>/dev/null || true
+    su tester -c "PATH=$PATH make check" || true
+    make install
+    rm -rf "$src"
+}
+
+build_patch() {
+    # LFS 12.1 §8.61 — Patch-2.7.6.
+    local src
+    src="$(unpack "$PATCH_URL")"
+    with_clean_build "$src"
+    ../configure --prefix=/usr
+    make
+    make check || true
+    make install
+    rm -rf "$src"
+}
+
+build_tar() {
+    # LFS 12.1 §8.62 — Tar-1.35.
+    local src
+    src="$(unpack "$TAR_URL")"
+    with_clean_build "$src"
+    FORCE_UNSAFE_CONFIGURE=1 ../configure --prefix=/usr
+    make
+    make check || true
+    make install
+    make -C ../doc install-html docdir="/usr/share/doc/tar-${TAR_VERSION}"
+    rm -rf "$src"
+}
+
+build_texinfo() {
+    # LFS 12.1 §8.63 — Texinfo-7.1 (final, replaces Ch.7 _tmp).
+    local src
+    src="$(unpack "$TEXINFO_URL")"
+    with_clean_build "$src"
+    ../configure --prefix=/usr
+    make
+    make check || true
+    make install
+    make TEXMF=/usr/share/texmf install-tex || true
+    rm -rf "$src"
+}
+
+build_vim() {
+    # LFS 12.1 §8.64 — Vim-9.1.0041.
+    local src
+    src="$(unpack "$VIM_URL")"
+    cd "$src"
+    # Point vim at the system-wide vimrc
+    echo '#define SYS_VIMRC_FILE "/etc/vimrc"' >> src/feature.h
+    ./configure --prefix=/usr
+    make
+    chown -R tester . 2>/dev/null || true
+    su tester -c "TERM=xterm-256color LANG=en_US.UTF-8 make -j1 test" \
+        > /tmp/vim-test.log 2>&1 || true
+    make install
+    ln -sv vim /usr/bin/vi
+    for L in /usr/share/man/{,*/}man1/vim.1; do
+        ln -sv vim.1 "$(dirname "$L")/vi.1"
+    done
+    ln -sv "../vim/vim91/doc" "/usr/share/doc/vim-${VIM_VERSION}"
+    # Create a minimal /etc/vimrc
+    cat > /etc/vimrc << 'VIMRC'
+" Begin /etc/vimrc
+" Ensure defaults are set before customizing settings, not after
+source $VIMRUNTIME/defaults.vim
+let skip_defaults_vim=1
+
+set nocompatible
+set backspace=2
+set mouse=
+syntax on
+if (&term == "xterm") || (&term == "putty")
+  set background=dark
+endif
+
+" End /etc/vimrc
+VIMRC
+    rm -rf "$src"
+}
+
+build_eudev() {
+    # SysV LFS — eudev-3.2.11 (the SysV replacement for systemd-udev).
+    # eudev is the udev fork used by this project (SysVinit edition);
+    # LFS 12.1 mainline uses udev from systemd-255, but this project requires eudev.
+    # Build commands mirror LFS 11.x eudev section verbatim.
+    local src
+    src="$(unpack "$EUDEV_URL")"
+    cd "$src"
+    # Fix pkg-config file generation — ${udevdir} is literal text for the .pc file
+    # shellcheck disable=SC2016
+    sed -i '/udevdir/a udev_dir=${udevdir}' src/udev/udev.pc.in
+    ./configure --prefix=/usr \
+                --bindir=/usr/sbin \
+                --sysconfdir=/etc \
+                --enable-manpages \
+                --disable-static
+    make
+    make check || true
+    # Create the rules directories before install
+    mkdir -pv /usr/lib/udev/rules.d
+    mkdir -pv /etc/udev/rules.d
+    make install
+    # Install the LFS udev helper rules (bootscripts for udev in SysV)
+    local lfs_rules
+    lfs_rules="$(fetch "$UDEV_LFS_URL")"
+    tar -xf "$lfs_rules" -C /tmp
+    make -f "/tmp/udev-lfs-${UDEV_LFS_VERSION}/Makefile.lfs" install
+    rm -rf "/tmp/udev-lfs-${UDEV_LFS_VERSION}"
+    # Build the hardware database
+    udevadm hwdb --update
+    rm -rf "$src"
+}
+
+build_procps() {
+    # LFS 12.1 §8.67 — Procps-ng-4.0.4 (final system build).
+    local src
+    src="$(unpack "$PROCPS_URL")"
+    with_clean_build "$src"
+    ../configure --prefix=/usr \
+                 --docdir="/usr/share/doc/procps-ng-${PROCPS_VERSION}" \
+                 --disable-static \
+                 --disable-kill
+    make
+    make -k check || true
+    make install
+    rm -rf "$src"
+}
+
+build_util_linux() {
+    # LFS 12.1 §8.68 — Util-linux-2.39.3 (final build; replaces Ch.7 _tmp).
+    # This final build adds --without-systemd compared to the temp build.
+    local src
+    src="$(unpack "$UTIL_LINUX_URL")"
+    cd "$src"
+    sed -i '/test_mkfds/s/^/#/' tests/helpers/Makemodule.am
+    mkdir -pv /var/lib/hwclock
+    ./configure --bindir=/usr/bin \
+                --libdir=/usr/lib \
+                --runstatedir=/run \
+                --sbindir=/usr/sbin \
+                --disable-chfn-chsh \
+                --disable-login \
+                --disable-nologin \
+                --disable-su \
+                --disable-setpriv \
+                --disable-runuser \
+                --disable-pylibmount \
+                --disable-static \
+                --without-python \
+                --without-systemd \
+                --without-systemdsystemunitdir \
+                ADJTIME_PATH=/var/lib/hwclock/adjtime \
+                --docdir="/usr/share/doc/util-linux-${UTIL_LINUX_VERSION}"
+    make
+    chown -R tester . 2>/dev/null || true
+    su tester -c "make -k check" || true
+    make install
+    rm -rf "$src"
+}
+
+build_e2fsprogs() {
+    # LFS 12.1 §8.69 — E2fsprogs-1.47.0.
+    local src
+    src="$(unpack "$E2FSPROGS_URL")"
+    mkdir -v "${src}/build"
+    cd "${src}/build"
+    ../configure --prefix=/usr \
+                 --sysconfdir=/etc \
+                 --enable-elf-shlibs \
+                 --disable-libblkid \
+                 --disable-libuuid \
+                 --disable-uuidd \
+                 --disable-fsck
+    make
+    make check || true
+    make install
+    rm -fv /usr/lib/{libcom_err,libe2p,libext2fs,libss}.a
+    gunzip -v /usr/share/info/libext2fs.info.gz
+    install-info --dir-file=/usr/share/info/dir \
+                 /usr/share/info/libext2fs.info
+    makeinfo -o doc/com_err.info ../lib/et/com_err.texinfo
+    install -v -m644 doc/com_err.info /usr/share/info
+    install-info --dir-file=/usr/share/info/dir \
+                 /usr/share/info/com_err.info
+    rm -rf "$src"
+}
+
+build_sysklogd() {
+    # LFS 12.1 §8.70 — Sysklogd-1.5.1 (SysV edition).
+    local src
+    src="$(unpack "$SYSKLOGD_URL")"
+    cd "$src"
+    # Fix two upstream issues: symbol loading error and obsolete wait type
+    sed -i '/Error loading kernel symbols/{n;n;d}' ksym_mod.c
+    sed -i 's/union wait/int/' syslogd.c
+    make
+    make BINDIR=/sbin install
+    # Create a basic syslog configuration
+    cat > /etc/syslog.conf << 'SYSLOGCONF'
+# Begin /etc/syslog.conf
+auth,authpriv.* -/var/log/auth.log
+*.*;auth,authpriv.none -/var/log/sys.log
+daemon.* -/var/log/daemon.log
+kern.* -/var/log/kern.log
+mail.* -/var/log/mail.log
+user.* -/var/log/user.log
+*.emerg *
+# End /etc/syslog.conf
+SYSLOGCONF
+    rm -rf "$src"
+}
+
+build_sysvinit() {
+    # LFS 12.1 §8.71 — SysVinit-3.08 (SysV edition).
+    local src
+    src="$(unpack "$SYSVINIT_URL")"
+    cd "$src"
+    patch -Np1 -i "../sysvinit-3.08-consolidated-1.patch"
+    make
+    make install
+    rm -rf "$src"
+}
+
+build_man_db() {
+    # LFS 12.1 §8.72 — Man-DB-2.12.0.
+    local src
+    src="$(unpack "$MAN_DB_URL")"
+    with_clean_build "$src"
+    ../configure --prefix=/usr \
+                 --docdir="/usr/share/doc/man-db-${MAN_DB_VERSION}" \
+                 --sysconfdir=/etc \
+                 --disable-setuid \
+                 --enable-cache-owner=bin \
+                 --with-browser=/usr/bin/lynx \
+                 --with-vgrind=/usr/bin/vgrind \
+                 --with-grap=/usr/bin/grap \
+                 --with-systemdtmpfilesdir= \
+                 --with-systemdsystemunitdir=
+    make
+    make check || true
+    make install
+    rm -rf "$src"
+}
