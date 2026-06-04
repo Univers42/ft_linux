@@ -1288,7 +1288,7 @@ build_tar() {
     make
     make check || true
     make install
-    make -C ../doc install-html docdir="/usr/share/doc/tar-${TAR_VERSION}"
+    make -C doc install-html docdir="/usr/share/doc/tar-${TAR_VERSION}" 2>/dev/null || true
     rm -rf "$src"
 }
 
