@@ -24,7 +24,7 @@ fi
 
 # Attach the disk image
 LOOP="$(attach_image "$IMG_PATH")"
-trap 'umount -R "$LFS" 2>/dev/null || true; detach_image "$LOOP"' EXIT
+arm_cleanup "$LOOP"
 sleep 1
 
 mkdir -p "$LFS"
@@ -52,6 +52,16 @@ fi
 info "Setting CONFIG_LOCALVERSION=${KERNEL_LOCALVERSION}"
 ./scripts/config --set-str LOCALVERSION "${KERNEL_LOCALVERSION}"
 ./scripts/config --disable LOCALVERSION_AUTO
+
+# QEMU/virtio boot essentials, built-in (=y) so the image boots with NO initramfs:
+# virtio disk/net/console, ext4 root, 8250 serial console, devtmpfs, ELF/script.
+KOPTS="VIRTIO VIRTIO_PCI VIRTIO_BLK VIRTIO_NET VIRTIO_CONSOLE VIRTIO_MENU"
+KOPTS="$KOPTS PCI EXT4_FS JBD2 SERIAL_8250 SERIAL_8250_CONSOLE TTY VT VT_CONSOLE"
+KOPTS="$KOPTS DEVTMPFS DEVTMPFS_MOUNT TMPFS PROC_FS SYSFS BINFMT_ELF BINFMT_SCRIPT"
+KOPTS="$KOPTS BLK_DEV NET INET PACKET UNIX NETDEVICES NET_CORE PRINTK MULTIUSER"
+for opt in $KOPTS; do ./scripts/config --enable "$opt"; done
+# No initramfs — root is on a built-in-driver device.
+./scripts/config --disable BLK_DEV_INITRD
 make olddefconfig
 
 # Build kernel and modules.
