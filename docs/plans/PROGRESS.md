@@ -14,6 +14,22 @@ resuming. Format per entry:
 
 ---
 
+## 2026-06-04 — M2 COMPLETE: entire Ch.7+Ch.8 userland built under hellish-in-chroot
+- result: **`Ch.8 build-all complete.` PHASE DONE.** 75 stamps (6 Ch.7 _tmp + 26 B1 + 43
+  B2/B3). Image has bash, init (SysVinit), gcc, udevd (eudev), syslogd, vim, agetty,
+  grub-install. 4.8G used / 12G free. The full mandatory userland is built FROM SOURCE,
+  NATIVELY UNDER HELLISH inside the chroot. The 3rd hellish fix (heredoc-body-quote-desync,
+  develop e047f67) unblocked sysklogd/sysvinit (their config heredocs). Submodule bumped.
+- THREE hellish root-cause fixes landed this run, all found by driving real LFS scripts:
+  (1) line-continuation in sourced files (tokenizer skip_noise), (2) consecutive-heredoc
+  (extract2 advance_hd), (3) heredoc-body-quote-desync (extract3 collect_specs line-by-line).
+  All DoD-green (1739 tests, bench >=1.0, norm), merged to develop, image republished.
+- GAP: no wget/curl in the image yet (subject requires one) — add wget in M7.
+- next (M7): add wget + B4 strip/cleanup → kernel: write configs/kernel/.config (virtio/
+  ext4/8250-serial built-in) + phase-kernel (6.6.32-dlesieur) → phase-system (04: hostname/
+  fstab-by-LABEL/inittab/GRUB-i386-pc/static-network) → QEMU boot (make run) → verify subject
+  criteria (uname -r, /boot path, partitions, hostname, wget, pkg-mgmt) → make shasum.
+
 ## 2026-06-04 — M2/B2-B3: ~38/43 userland built; blocked on hellish heredoc-at-scale bug
 - result: B2/B3 building well under hellish-in-chroot. Built (stamped): ncurses, sed,
   psmisc, gettext, bison, grep, bash, libtool, gdbm, gperf, expat, inetutils, less, perl,
