@@ -14,6 +14,30 @@ resuming. Format per entry:
 
 ---
 
+## 2026-06-04 — M2 in progress: chroot driver done; heredoc bug + Ch.8 recipes underway
+- did: rewrote `scripts/02-build-system.sh` (commit e51c95b) — real LFS Ch.7 chroot prep
+  (virtual FS, dir skeleton, /etc/{passwd,group,hosts}, /dev nodes), **stages hellish +
+  libreadline.so.8/libtinfo.so.6 + the static watchdog + the build scripts into the
+  chroot** (so the in-chroot build runs under hellish too), then a hellish-in-chroot smoke
+  test, then `/sources/scripts/build-all.sh` if present. CHROOT_ENV uses LD_LIBRARY_PATH=
+  /tools/lib for hellish's libs.
+- BLOCKER (hellish bug, reproduced): **consecutive heredocs** — the 2nd `cat <<"E2"` in a
+  function isn't found ("here-document delimited by EOF (wanted E2)"); body leaks as
+  commands. bash is fine. Hit it in 02's write_etc_files. Heredocs are everywhere
+  (04-configure, recipes) so it's blocking. **Background agent fixing it** in vendor/42sh
+  (full DoD: 1735 tests + bench + norm + regress + merge develop). Reproducer:
+  a function with two `cat <<"EOF" … EOF` blocks.
+- Ch.8 recipes: a first agent drafted `build-system-lib.sh` + packages.sh Ch.8 but targeted
+  LFS **12.4** (gcc 15.2/glibc 2.42) — WRONG; our toolchain is LFS **12.1** (gcc 13.2.0/
+  glibc 2.39/binutils 2.42, already pinned in packages.sh lines 1-74). **Re-tasked a
+  background agent** to regenerate against LFS 12.1, REUSING the toolchain version vars,
+  using LFS MD5 (sha256 not published). The 12.4 draft on disk will be overwritten.
+- next (when agents land): review heredoc fix → republish hellish image + rebuild builder →
+  review/integrate 12.1 recipes → write `scripts/build-all.sh` (sources packages.sh +
+  build-system-lib.sh, runs `step <pkg> build_<pkg>` over an ORDER list, guarded per pkg) +
+  pre-fetch Ch.8 tarballs into $LFS/sources → `make phase-packages` (smoke + B1 build).
+  Also: create a `tester` user in the chroot before build_gcc (its test suite needs it).
+
 ## 2026-06-04 — M1 COMPLETE: full cross-toolchain built end-to-end under hellish
 - did: fixed two more pre-existing **script** bugs (never hit before — toolchain never
   completed under any shell): `build_ncurses`/`build_file` built a host tool (tic/file) in
