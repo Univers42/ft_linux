@@ -71,3 +71,107 @@ TAR_URL="https://ftp.gnu.org/gnu/tar/tar-${TAR_VERSION}.tar.xz"
 
 XZ_VERSION=5.4.6
 XZ_URL="https://tukaani.org/xz/xz-${XZ_VERSION}.tar.xz"
+
+# -- Ch. 8 (final system) ---------------------------------------------------
+# Versions pinned to LFS 12.1.
+# Source: https://www.linuxfromscratch.org/lfs/view/12.1/
+# MD5 checksums from the LFS 12.1 md5sums file (published by the book).
+# Toolchain-shared packages (GCC, Glibc, Binutils, GMP, MPFR, MPC, M4, File,
+# XZ, and the other Ch.6 packages) reuse the vars defined above — no _CH8_
+# duplicates needed since LFS 12.1 uses the same versions in Ch.5-6 and Ch.8.
+
+MAN_PAGES_VERSION=6.06
+MAN_PAGES_URL="https://www.kernel.org/pub/linux/docs/man-pages/man-pages-${MAN_PAGES_VERSION}.tar.xz"
+MAN_PAGES_MD5=26b39e38248144156d437e1e10cb20bf
+
+IANA_ETC_VERSION=20240125
+IANA_ETC_URL="https://github.com/Mic92/iana-etc/releases/download/${IANA_ETC_VERSION}/iana-etc-${IANA_ETC_VERSION}.tar.gz"
+IANA_ETC_MD5=aed66d04de615d76c70890233081e584
+
+# Ch.8 glibc: same version as Ch.5 cross-build (GLIBC_VERSION=2.39).
+# Reuse GLIBC_URL. Additional patch and tzdata for the Ch.8 install:
+GLIBC_PATCH_URL="https://www.linuxfromscratch.org/patches/lfs/12.1/glibc-${GLIBC_VERSION}-fhs-1.patch"
+GLIBC_PATCH_MD5=9a5997c3452909b1769918c759eff8a2
+
+TZDATA_VERSION=2024a
+TZDATA_URL="https://www.iana.org/time-zones/repository/releases/tzdata${TZDATA_VERSION}.tar.gz"
+TZDATA_MD5=2349edd8335245525cc082f2755d5bf4
+
+ZLIB_VERSION=1.3.1
+ZLIB_URL="https://zlib.net/fossils/zlib-${ZLIB_VERSION}.tar.gz"
+ZLIB_MD5=9855b6d802d7fe5b7bd5b196a2271655
+
+BZIP2_VERSION=1.0.8
+BZIP2_URL="https://www.sourceware.org/pub/bzip2/bzip2-${BZIP2_VERSION}.tar.gz"
+BZIP2_MD5=67e051268d0c475ea773822f7500d0e5
+BZIP2_PATCH_URL="https://www.linuxfromscratch.org/patches/lfs/12.1/bzip2-${BZIP2_VERSION}-install_docs-1.patch"
+BZIP2_PATCH_MD5=6a5ac7e89b791aae556de0f745916f7f
+
+# Ch.8 XZ: same version as Ch.6 cross-build (XZ_VERSION=5.4.6). Reuse XZ_URL.
+# (No _CH8_ suffix needed — same tarball.)
+
+ZSTD_VERSION=1.5.5
+ZSTD_URL="https://github.com/facebook/zstd/releases/download/v${ZSTD_VERSION}/zstd-${ZSTD_VERSION}.tar.gz"
+ZSTD_MD5=63251602329a106220e0a5ad26ba656f
+
+# Ch.8 File: same version as Ch.6 cross-build (FILE_VERSION=5.45). Reuse FILE_URL.
+
+READLINE_VERSION=8.2
+READLINE_URL="https://ftp.gnu.org/gnu/readline/readline-${READLINE_VERSION}.tar.gz"
+READLINE_MD5=4aa1b31be779e6b84f9a96cb66bc50f6
+READLINE_PATCH_URL="https://www.linuxfromscratch.org/patches/lfs/12.1/readline-8.2-upstream_fixes-3.patch"
+READLINE_PATCH_MD5=9ed497b6cb8adcb8dbda9dee9ebce791
+
+# Ch.8 M4: same version as Ch.6 cross-build (M4_VERSION=1.4.19). Reuse M4_URL.
+
+BC_VERSION=6.7.5
+BC_URL="https://github.com/gavinhoward/bc/releases/download/${BC_VERSION}/bc-${BC_VERSION}.tar.xz"
+BC_MD5=e249b1f86f886d6fb71c15f72b65dd3d
+
+FLEX_VERSION=2.6.4
+FLEX_URL="https://github.com/westes/flex/releases/download/v${FLEX_VERSION}/flex-${FLEX_VERSION}.tar.gz"
+FLEX_MD5=2882e3179748cc9f9c23ec593d6adc8d
+
+TCL_VERSION=8.6.13
+TCL_URL="https://downloads.sourceforge.net/tcl/tcl${TCL_VERSION}-src.tar.gz"
+TCL_MD5=0e4358aade2f5db8a8b6f2f6d9481ec2
+
+EXPECT_VERSION=5.45.4
+EXPECT_URL="https://prdownloads.sourceforge.net/expect/expect${EXPECT_VERSION}.tar.gz"
+EXPECT_MD5=00fce8de158422f5ccd2666512329bd2
+# No patch for expect in LFS 12.1 (the gcc15 patch is a 12.2+ addition)
+
+DEJAGNU_VERSION=1.6.3
+DEJAGNU_URL="https://ftp.gnu.org/gnu/dejagnu/dejagnu-${DEJAGNU_VERSION}.tar.gz"
+DEJAGNU_MD5=68c5208c58236eba447d7d6d1326b821
+
+PKGCONF_VERSION=2.1.1
+PKGCONF_URL="https://distfiles.ariadne.space/pkgconf/pkgconf-${PKGCONF_VERSION}.tar.xz"
+PKGCONF_MD5=bc29d74c2483197deb9f1f3b414b7918
+
+# Ch.8 Binutils: same version as Ch.5 cross-build (BINUTILS_VERSION=2.42). Reuse BINUTILS_URL.
+# Ch.8 GMP: same version as Ch.5 (GMP_VERSION=6.3.0). Reuse GMP_URL.
+# Ch.8 MPFR: same version as Ch.5 (MPFR_VERSION=4.2.1). Reuse MPFR_URL.
+# Ch.8 MPC: same version as Ch.5 (MPC_VERSION=1.3.1). Reuse MPC_URL.
+
+ATTR_VERSION=2.5.2
+ATTR_URL="https://download.savannah.gnu.org/releases/attr/attr-${ATTR_VERSION}.tar.gz"
+ATTR_MD5=227043ec2f6ca03c0948df5517f9c927
+
+ACL_VERSION=2.3.2
+ACL_URL="https://download.savannah.gnu.org/releases/acl/acl-${ACL_VERSION}.tar.xz"
+ACL_MD5=590765dee95907dbc3c856f7255bd669
+
+LIBCAP_VERSION=2.69
+LIBCAP_URL="https://www.kernel.org/pub/linux/libs/security/linux-privs/libcap2/libcap-${LIBCAP_VERSION}.tar.xz"
+LIBCAP_MD5=4667bacb837f9ac4adb4a1a0266f4b65
+
+LIBXCRYPT_VERSION=4.4.36
+LIBXCRYPT_URL="https://github.com/besser82/libxcrypt/releases/download/v${LIBXCRYPT_VERSION}/libxcrypt-${LIBXCRYPT_VERSION}.tar.xz"
+LIBXCRYPT_MD5=b84cd4104e08c975063ec6c4d0372446
+
+SHADOW_VERSION=4.14.5
+SHADOW_URL="https://github.com/shadow-maint/shadow/releases/download/${SHADOW_VERSION}/shadow-${SHADOW_VERSION}.tar.xz"
+SHADOW_MD5=452b0e59f08bf618482228ba3732d0ae
+
+# Ch.8 GCC: same version as Ch.5/6 cross-build (GCC_VERSION=13.2.0). Reuse GCC_URL.
