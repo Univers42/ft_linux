@@ -790,11 +790,12 @@ build_sed() {
 }
 
 build_psmisc() {
-    # LFS 12.1 §8.31 — Psmisc-23.6.
+    # LFS 12.1 §8.31 — Psmisc-23.6. Build IN-TREE: out-of-tree breaks
+    # install-data-local (translated man-po pages aren't generated).
     local src
     src="$(unpack "$PSMISC_URL")"
-    with_clean_build "$src"
-    ../configure --prefix=/usr
+    cd "$src"
+    ./configure --prefix=/usr
     make
     make check || true
     make install
