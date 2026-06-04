@@ -266,15 +266,18 @@ command crash (NULL `argv`), bare-`for` crash, `source`/`eval` leading-comment, 
 pipefail`, `[[ … ]]` single-test, brace expansion with a `$var`/quoted prefix, process
 substitution inheriting non-exported shell vars (`get_envp_all`), **line-continuation in
 sourced files** (tokenizer `skip_noise`), **consecutive heredocs** (`extract2` advance_hd),
-**heredoc-body-quote desync in sourced strings** (`extract3` line-by-line collect), and
-**braced `${VAR}` in unquoted heredoc bodies** (`helpers3` `expand_braced`).
+**heredoc-body-quote desync in sourced strings** (`extract3` line-by-line collect),
+**braced `${VAR}` in unquoted heredoc bodies** (`helpers3` `expand_braced`), and
+**`==` string-equality in `[[`/`[`/`test`** (was only `=`/`!=`; builtin_test + ops).
 
 **Known hellish gaps — ALL verified host-bash-only, NOT hit by the hellish-run build:**
-- `[[ a == a ]]` (double-equals) returns false; only `[[ a = a ]]` works. (conformance.sh,
-  check-hellish.sh — host/bash.)
-- `[[ … && … ]]` / `[[ … || … ]]` internal logic — splits on `&&`. (vm-run.sh, host/bash.)
-  A 2026-06-04 fix attempt **infinite-looped** on `&&`/`||`; a retry needs loop-safe
-  short-circuit eval with correct `!`/`( )`/`||`<`&&` precedence.
+- `[[ … && … ]]` / `[[ … || … ]]` internal logic — splits on `&&`. (vm-run.sh + the
+  conformance test — host/bash only.) A loop-safe recursive-descent evaluator + a lexer
+  `in_dbracket` word-mode were built and work in isolation, but expose a deeper bug: under
+  `-c` (INP_ARG) the **REPL input-completeness loop** (`get_more_tokens`/input.c, via
+  `readline_cmd`) spins on `&&`-as-word inside `[[` → HANG. Reverted (kept the clean exit-2)
+  rather than ship a hang. A real fix must also make that completeness layer treat such a
+  command as COMPLETE (don't request more input under INP_ARG).
 - `set -e` doesn't abort a failing *multi-stage pipeline* (simple cmds do).
 - script-FILE (non-sourced) heredoc with a leading-quote body line (sourced path is fixed).
 - word-path malformed brace `echo "${FOO"` → `ft_assert` crash (reparse_dquote.c) on bad input.

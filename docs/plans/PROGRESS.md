@@ -14,6 +14,33 @@ resuming. Format per entry:
 
 ---
 
+## 2026-06-04 — [[ ]] hardening (== fixed, && deferred) + bonus branding; final shasum
+- **hellish fix #5 — `[[ a == a ]]`**: was FALSE because only `=`/`!=` were recognized;
+  added `==` (the bash-preferred form) as a string-equality alias in builtin_test.c +
+  builtin_test_ops.c. +4 regress cases. **1746 tests pass**, norm clean, bench OVERALL
+  geomean 1.008x. Merged to develop; image republished (all 5 fixes shipped).
+- **`[[ … && … ]]` / `|| ! ()` — ATTEMPTED then REVERTED (documented gap).** I built a
+  loop-safe recursive-descent evaluator (db_or/and/not/primary, every fn strictly advances
+  the token index) + a lexer `in_dbracket` mode emitting &&/||/(/) as WORD tokens. The
+  evaluator + lexer are correct in isolation, BUT it exposed a deeper bug: under `-c`
+  (metinp=INP_ARG) the **REPL input-completeness loop** (`get_more_tokens`, input.c) spins
+  when `&&` is a word inside `[[` — a HANG. Original behaviour was a clean exit-2 ("missing
+  ]]"). Shipping a hang violates the no-crash mandate, so I reverted to the safe exit-2.
+  Root cause for a future fix: the `-c`/REPL completeness layer must treat a `[[`-opened
+  command with word-&& as COMPLETE (and/or readline_cmd under INP_ARG must return EOF, not
+  loop). NOT subject-relevant: `[[ && ]]` appears only in host-bash scripts (vm-run.sh,
+  conformance test). Watchdog/`timeout` guards meant the hang never blocked the session.
+- **BONUS — distro branding** (/etc/os-release, /etc/issue, /etc/motd): "make it yours".
+  Verified at boot (issue banner + MOTD render). All mandatory criteria still PASS.
+- **Final deliverable**: build/disk.sha256 =
+  `830b484f7f5ede2a14fb4c924eb2b3cb6d483f12b799b47cd7b16c902c7086d5` (rebuilt under the
+  fully-fixed ==-hellish, with branding).
+- **Bonus stretch NOT done (honest): X server + window manager from source.** Genuinely a
+  multi-hour / multi-GB BLFS effort (~50 pkgs: util-macros, xorgproto, xcb, ~30 Xlibs,
+  freetype/fontconfig, **Mesa**, libdrm, xorg-server, drivers, fonts, then dwm/i3) — beyond
+  the available time/disk budget. Path: BLFS "X Window System" chapter, then a tiny WM
+  (dwm). Kernel would also need CONFIG_FB/DRM + the QEMU std-vga/virtio-gpu enabled.
+
 ## 2026-06-04 — RE-AUDIT pass + hellish gap inventory (post subject-complete)
 - **Re-audit results (all green where it matters):**
   - hellish `make test`: **1742/1742 PASS** (develop, after 4 merged fixes).
