@@ -404,3 +404,9 @@ CH8_SOURCES="$CH8_SOURCES $BASH_PATCH_URL"
 # copied into the chroot's /sources for the final native rebuild).
 CH8_SOURCES="$CH8_SOURCES $SED_URL $GREP_URL $BASH_URL $GAWK_URL $DIFFUTILS_URL"
 CH8_SOURCES="$CH8_SOURCES $FINDUTILS_URL $GZIP_URL $MAKE_URL $PATCH_URL $TAR_URL"
+
+# -- Network client (subject: curl OR wget must work) -----------------------
+WGET_VERSION=1.21.4
+WGET_URL="https://ftp.gnu.org/gnu/wget/wget-${WGET_VERSION}.tar.gz"
+WGET_MD5="" # TODO md5
+CH8_SOURCES="$CH8_SOURCES $WGET_URL"

@@ -1508,3 +1508,16 @@ build_man_db() {
     make install
     rm -rf "$src"
 }
+
+build_wget() {
+    # Network client (subject: curl OR wget must work in the final system).
+    # HTTP-only: OpenSSL/GnuTLS aren't in the package set, so --without-ssl;
+    # this satisfies the subject's connectivity check (QEMU user-net is HTTP-ok).
+    local src
+    src="$(unpack "$WGET_URL")"
+    with_clean_build "$src"
+    ../configure --prefix=/usr --sysconfdir=/etc --without-ssl
+    make
+    make install
+    rm -rf "$src"
+}
