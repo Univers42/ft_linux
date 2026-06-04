@@ -14,6 +14,31 @@ resuming. Format per entry:
 
 ---
 
+## 2026-06-04 — M0 done: watchdog + the toolchain blocker (line continuation)
+- did: (M0a) wrote/tested C watchdog (`tools/watchdog`, 9/9): total + idle/stall
+  timeouts, whole-pgroup kill; wired into Makefile phases (host `timeout` backstop +
+  in-container watchdog) + `lib.sh guard()` + `make loopclean`; signal-safe teardown
+  (`arm_cleanup`, since hellish doesn't run EXIT traps on SIGTERM). (M0b) extended
+  `conformance.sh`. (M0c) **root-caused the toolchain blocker**: a `\<newline>` line
+  continuation in a *sourced* function body (e.g. build_gcc_pass1) was lexed into a
+  spurious word → word-splitting made it an empty/newline arg → `../configure` got `\n`
+  args → autotools saw build_alias/host_alias with newlines ("config.sub: missing
+  argument"). The REPL never hit it (it joins continuation lines first); exec_string
+  (source/eval/command) feeds the whole string to the tokenizer. Fixed in
+  `vendor/42sh` lexer (`tokenizer.c skip_noise`: skip `\<NL>` at token boundaries,
+  quote/comment-safe). 
+- result: hellish DoD GREEN — 1735 tests pass, norm clean, bench geomean 1.004x (wall
+  1.206x faster, hard tests 1.041x, no MISMATCH). Merged to `vendor/42sh` develop
+  (800dd4e). Conformance vs rebuilt builder: only `dbracket-logic` diverges (not used by
+  the in-container build). Republished hellish OPT image locally + rebuilt builder.
+- decided: defer `[[ && ]]` (dbracket-logic) and a pre-existing **ASan-debug-only**
+  multi-line-script-FILE crash (baked OPT is clean; the real build uses OPT) to a
+  hardening pass — neither blocks the subject. Diagnosis discipline: reproduce in the
+  real sourced context, not hand-typed (hand-typed copies were misleadingly clean).
+- next: phase-toolchain re-running under the fixed hellish (M1); then Ch.8 (M2+).
+
+---
+
 ## 2026-06-04 — Planning complete (pre-journey)
 - did: wrote the plan set under `docs/plans/` (00 master, 01 architecture/DSA, 02 Ch.8
   manifest, 03 hellish, 04 kernel/boot/net, 05 autonomy) + this log. Master strategy in

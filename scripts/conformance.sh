@@ -64,5 +64,7 @@ chk 'exec-procsub-tee' 'exec > >(tee -a out.log) 2>&1; echo hello'
 chk 'set-e-pipeline' 'set -e; true | true | false; echo AFTER'
 chk 'cmdsub-trailing-newline' 'x="$(printf "a\n\n")"; printf "[%s]" "$x"'
 chk 'cmdsub-internal-newline' 'x="$(printf "a\nb\n")"; printf "[%s]" "$x"'
+chk 'source-continuation' 'printf "g(){ echo X \\\n  Y \\\n  Z; }\n" > c.sh; . ./c.sh; g'
+chk 'eval-continuation' 'eval "$(printf "echo p \\\n  q")"'
 echo "==> $fail divergence(s)."
 [[ "$fail" -eq 0 ]]
