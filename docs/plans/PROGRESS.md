@@ -14,6 +14,24 @@ resuming. Format per entry:
 
 ---
 
+## 2026-06-04 — M2/B2-B3: ~38/43 userland built; blocked on hellish heredoc-at-scale bug
+- result: B2/B3 building well under hellish-in-chroot. Built (stamped): ncurses, sed,
+  psmisc, gettext, bison, grep, bash, libtool, gdbm, gperf, expat, inetutils, less, perl,
+  xml_parser, intltool, autoconf, automake, kmod, elfutils, coreutils, check, diffutils,
+  gawk, findutils, groff, grub, gzip, iproute2, kbd, libpipeline, make, patch, tar, texinfo,
+  vim, eudev, procps, util_linux, e2fsprogs (~38). REMAINING: sysklogd, sysvinit, man_db.
+- recipe fixes this batch (all committed): expat URL (sf 404→github), reused-Ch.6 tarballs
+  added to CH8_SOURCES, vim URL, psmisc release-tarball+in-tree (man-po), sed/expat/tar
+  out-of-tree doc paths, kmod --without-openssl, eudev udev-lfs rules cwd, =#TODO md5 parse.
+- BLOCKER (hellish bug): **sysklogd's single syslog.conf heredoc leaked** ("auth,authpriv.*:
+  command not found"). Root cause: split_heredocs (exec_string.c) pre-extracts ALL heredoc
+  bodies in a sourced file (file order), but only the CALLED function's heredoc executes →
+  desync when a file DEFINES many heredoc-functions but CALLS few. (The earlier advance_hd
+  fix only covered consecutive heredocs.) **Agent fixing** in vendor/42sh (full DoD; will
+  also unblock sysvinit's inittab heredoc). Per the "fix hellish not the script" rule.
+- next: agent lands heredoc fix → republish hellish image → re-run phase-packages (sysklogd
+  /sysvinit/man_db build) → B4 strip/cleanup → M7 (kernel/GRUB/SysVinit/network/QEMU/shasum).
+
 ## 2026-06-04 — M2/B1 COMPLETE: Ch.7 temp tools + Ch.8 core built under hellish-in-chroot
 - result: **`make phase-packages` PHASE_EXIT=0, PHASE DONE.** All 32 stamps in image
   /sources/.stamps: 6 Ch.7 _tmp (gettext/bison/perl/python/texinfo/util-linux) + 26 Ch.8
