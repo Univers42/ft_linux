@@ -217,7 +217,7 @@ NCURSES_MD5=c5367e829b6d9f3f97b280bb3e6bfbc3
 SED_MD5=6aac9b2dbafcd5b7a67a8a9bcb8036c3
 
 PSMISC_VERSION=23.6
-PSMISC_URL="https://gitlab.com/psmisc/psmisc/-/archive/v${PSMISC_VERSION}/psmisc-v${PSMISC_VERSION}.tar.gz"
+PSMISC_URL="https://downloads.sourceforge.net/psmisc/psmisc-${PSMISC_VERSION}.tar.xz"
 PSMISC_MD5=ed3206da1184ce9e82d607dc56c52633
 
 # Ch.8 Gettext: reuse GETTEXT_VERSION=0.22.4 / GETTEXT_URL / GETTEXT_MD5 above.
