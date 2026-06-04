@@ -173,6 +173,38 @@ echo 'LANG=C.UTF-8' > "$LFS/etc/locale.conf"
 ln -sf /usr/share/zoneinfo/UTC "$LFS/etc/localtime" 2>/dev/null || true
 
 # ============================================================
+# 6b. Distro identity / branding (bonus: "make this system yours")
+# ============================================================
+cat > "$LFS/etc/os-release" <<EOF
+NAME="ft_linux"
+PRETTY_NAME="ft_linux (how_to_train_your_kernel) — ${STUDENT_LOGIN}"
+ID=ft_linux
+VERSION="1.0"
+VERSION_ID=1.0
+BUILD_ID=${KERNEL_FULL}
+HOME_URL="https://www.linuxfromscratch.org/"
+EOF
+
+cat > "$LFS/etc/issue" <<EOF
+ft_linux — how_to_train_your_kernel  (\\r)
+Kernel ${KERNEL_FULL} on an \\m (\\l)
+
+EOF
+
+cat > "$LFS/etc/motd" <<'EOF'
+
+   __ _     _ _
+  / _| |_  | (_)_ _ _  ___ __
+ |  _|  _| | | | ' \ || \ \ /
+ |_|  \__| |_|_|_||_\_,_/_\_\   how_to_train_your_kernel
+
+ A Linux From Scratch distribution, built entirely from source.
+ Toolchain, ~80 packages, kernel and bootloader: all compiled here.
+ Build scripts run under "hellish" (a 42sh). Tools: gcc, make, wget.
+
+EOF
+
+# ============================================================
 # 7. GRUB — BIOS (i386-pc) install + grub.cfg
 # ============================================================
 # /boot is partition 2 on a GPT disk → GRUB refers to it as (hd0,gpt2).
