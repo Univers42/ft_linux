@@ -14,6 +14,26 @@ resuming. Format per entry:
 
 ---
 
+## 2026-06-04 — M7: kernel + system config; final blocker = GRUB-on-loop in container
+- DONE: kernel **6.6.32-dlesieur** built (defconfig + virtio/ext4/8250/devtmpfs built-in,
+  no initramfs) → /boot/vmlinuz-6.6.32-dlesieur. Added **wget** (HTTP, --without-ssl) for
+  the network req → userland now 76 pkgs. phase-system (04, reworked for LFS Ch.9): installs
+  **lfs-bootscripts** (Ch.9.2) via chroot, serial console (GRUB console=ttyS0,115200 + inittab
+  agetty ttyS0), static network (eth0 10.0.2.15/24 gw 10.0.2.2 dns 10.0.2.3 = QEMU user-net,
+  ipv4-static service), fstab by LABEL, passwordless root. arm_cleanup. All committed.
+- BLOCKER (infra, not hellish): **grub-install fails on the loop image** — attach_image uses
+  kpartx device-mapper nodes (/dev/mapper/loopXpN; chosen because Docker has no udev), and
+  grub-probe mis-classifies the dm /boot as LVM ("disk lvm/loopXpN not found"). My partx+mknod
+  +remount attempt hit dm/kernel-node superblock aliasing ("already mounted"). **Agent fixing**
+  — root approach: make attach_image expose REAL kernel partition nodes (losetup -P + mknod
+  /dev/loopXpN from /sys) so grub-probe sees plain (hd0,gptN); phases 0-3 stamped so only
+  phase-system is affected. Only edits lib.sh / 04.
+- next: agent lands grub fix → phase-system green → **make run** (QEMU, -nographic, ttyS0) →
+  verify subject criteria (uname -r=6.6.32-dlesieur, /boot path, >=3 partitions, hostname
+  dlesieur, wget reaches net, build+run a hello = pkg-mgmt) → **make shasum** → commit
+  build/disk.sha256. Then deferred hellish hardening ([[ && ]], script-file heredoc edge) +
+  full re-audit.
+
 ## 2026-06-04 — M2 COMPLETE: entire Ch.7+Ch.8 userland built under hellish-in-chroot
 - result: **`Ch.8 build-all complete.` PHASE DONE.** 75 stamps (6 Ch.7 _tmp + 26 B1 + 43
   B2/B3). Image has bash, init (SysVinit), gcc, udevd (eudev), syslogd, vim, agetty,
