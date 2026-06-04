@@ -14,6 +14,22 @@ resuming. Format per entry:
 
 ---
 
+## 2026-06-04 — M2/B1 COMPLETE: Ch.7 temp tools + Ch.8 core built under hellish-in-chroot
+- result: **`make phase-packages` PHASE_EXIT=0, PHASE DONE.** All 32 stamps in image
+  /sources/.stamps: 6 Ch.7 _tmp (gettext/bison/perl/python/texinfo/util-linux) + 26 Ch.8
+  core (glibc, zlib, bzip2, xz, zstd, file, readline, m4, bc, flex, tcl, expect, dejagnu,
+  pkgconf, binutils, gmp, mpfr, mpc, attr, acl, libcap, libxcrypt, shadow, gcc, man-pages,
+  iana-etc). All built NATIVELY under hellish inside the chroot. gcc's largefile-config.h
+  "Error 1 (ignored)" is benign (LFS-known). Disk: 30G free.
+- fix that unblocked it: prepare_virtfs must run every container invocation (was stamped →
+  skipped → no /dev bind → perl saw /dev/null as a file; no /proc → the stat warning).
+  Both symptoms gone. Commit for that + man-pages GIT=false + Ch.7 all on develop.
+- doing: agent drafting the REMAINING Ch.8 (LFS 12.1 SysVinit) — ncurses..man-db + eudev/
+  procps/util-linux(final)/e2fsprogs/sysklogd/sysvinit/grub, appended after build_gcc
+  (final builds, no _tmp). Then re-run phase-packages (B1 stamped → skip; B2/B3 build).
+- next: B2/B3 build → B4 strip/cleanup → M7 (kernel virtio .config + GRUB + SysVinit
+  bootscripts + network(static to QEMU user-net) + wget; QEMU boot; subject verify; shasum).
+
 ## 2026-06-04 — M2: hellish-in-chroot WORKS; found missing LFS Ch.7 (temp tools)
 - result: phase-packages ran — **hellish-in-chroot smoke PASSED** (HELLISH_IN_CHROOT_OK),
   build-all ran under hellish: man_pages [done], iana_etc [done], then **glibc configure
