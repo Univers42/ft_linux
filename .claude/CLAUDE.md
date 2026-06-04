@@ -256,7 +256,7 @@ for both `vendor/42sh` and ft_linux superproject commits) → rebuild + republis
 hellish image → rebuild the builder → re-run the phase. Pushing to `Univers42/*` and
 `make my_shell` (sudo) are user-gated.
 
-**Gates that must stay green after any hellish change:** the **1753** functional tests,
+**Gates that must stay green after any hellish change:** the **2474** functional tests,
 `norm`, and the benchmark geomean (OVERALL ≥ ~1.0; currently 1.008x, wall 1.211x faster —
 perf: libft must be built `-O3`; its default Makefile shipped `-O0`, slower than bash).
 
