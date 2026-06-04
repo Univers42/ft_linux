@@ -14,6 +14,22 @@ resuming. Format per entry:
 
 ---
 
+## 2026-06-04 — `[[ && ]]` / `||` / `!` / `( )` FIXED → conformance 0 divergences
+- The previously-deferred `[[ … && … ]]` gap is now **fully fixed** (no hang). Three parts:
+  1. lexer `in_db` word-mode (`dbracket_lex.c` + `tokenizer.c` `tokenize_step`): inside `[[ ]]`,
+     `&&`/`||`/`(`/`)` are emitted as WORD tokens so the parser doesn't split the command.
+  2. loop-safe recursive-descent evaluator (`builtin_dbracket.c`: db_or/and/not/primary, each
+     strictly advances the token index) with `||`<`&&`<`!`<primary precedence + `( )` grouping.
+  3. **THE ROOT CAUSE of the earlier hang**: `reparse_norm_word` (word-splitting) never advanced
+     past a bare special char, so a word containing `&` (now possible inside `[[ ]]`) looped
+     forever in `reparse_words`. Fixed by consuming ≥1 char. (My earlier "REPL input-completeness
+     loop" hypothesis was wrong — pinpointed via staged dprintf tracing: parse_simple_list OK →
+     reparse_words hung.)
+- DoD GREEN: **1753 tests pass** (+7 `[[ ]]` logic regress cases), **conformance 0 divergences**,
+  norm clean, bench OVERALL geomean 1.011x (wall 1.202x faster), matches bash 6/6. Merged to
+  develop (fb6d8e9); hellish image republished. All hung tests were timeout-guarded (no crash).
+- hellish now has **6 root-cause fixes**; the only remaining conformance items are gone.
+
 ## 2026-06-04 — [[ ]] hardening (== fixed, && deferred) + bonus branding; final shasum
 - **hellish fix #5 — `[[ a == a ]]`**: was FALSE because only `=`/`!=` were recognized;
   added `==` (the bash-preferred form) as a string-equality alias in builtin_test.c +

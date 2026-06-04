@@ -256,7 +256,7 @@ for both `vendor/42sh` and ft_linux superproject commits) → rebuild + republis
 hellish image → rebuild the builder → re-run the phase. Pushing to `Univers42/*` and
 `make my_shell` (sudo) are user-gated.
 
-**Gates that must stay green after any hellish change:** the **1742** functional tests,
+**Gates that must stay green after any hellish change:** the **1753** functional tests,
 `norm`, and the benchmark geomean (OVERALL ≥ ~1.0; currently 1.008x, wall 1.211x faster —
 perf: libft must be built `-O3`; its default Makefile shipped `-O0`, slower than bash).
 
@@ -267,17 +267,15 @@ pipefail`, `[[ … ]]` single-test, brace expansion with a `$var`/quoted prefix,
 substitution inheriting non-exported shell vars (`get_envp_all`), **line-continuation in
 sourced files** (tokenizer `skip_noise`), **consecutive heredocs** (`extract2` advance_hd),
 **heredoc-body-quote desync in sourced strings** (`extract3` line-by-line collect),
-**braced `${VAR}` in unquoted heredoc bodies** (`helpers3` `expand_braced`), and
-**`==` string-equality in `[[`/`[`/`test`** (was only `=`/`!=`; builtin_test + ops).
+**braced `${VAR}` in unquoted heredoc bodies** (`helpers3` `expand_braced`),
+**`==` string-equality in `[[`/`[`/`test`** (builtin_test + ops), and
+**`&&`/`||`/`!`/`( )` inside `[[ ]]`** (lexer `in_db` word-mode in `dbracket_lex.c`
+emits the operators as WORD tokens; a loop-safe recursive-descent evaluator in
+`builtin_dbracket.c` evaluates with correct precedence + short-circuit — the prior
+hang's real root cause was `reparse_norm_word` not advancing past a bare special
+char like `&`, now fixed). **conformance.sh is now 0 divergences.**
 
 **Known hellish gaps — ALL verified host-bash-only, NOT hit by the hellish-run build:**
-- `[[ … && … ]]` / `[[ … || … ]]` internal logic — splits on `&&`. (vm-run.sh + the
-  conformance test — host/bash only.) A loop-safe recursive-descent evaluator + a lexer
-  `in_dbracket` word-mode were built and work in isolation, but expose a deeper bug: under
-  `-c` (INP_ARG) the **REPL input-completeness loop** (`get_more_tokens`/input.c, via
-  `readline_cmd`) spins on `&&`-as-word inside `[[` → HANG. Reverted (kept the clean exit-2)
-  rather than ship a hang. A real fix must also make that completeness layer treat such a
-  command as COMPLETE (don't request more input under INP_ARG).
 - `set -e` doesn't abort a failing *multi-stage pipeline* (simple cmds do).
 - script-FILE (non-sourced) heredoc with a leading-quote body line (sourced path is fixed).
 - word-path malformed brace `echo "${FOO"` → `ft_assert` crash (reparse_dquote.c) on bad input.
