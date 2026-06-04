@@ -14,6 +14,23 @@ resuming. Format per entry:
 
 ---
 
+## 2026-06-04 — M2: hellish-in-chroot WORKS; found missing LFS Ch.7 (temp tools)
+- result: phase-packages ran — **hellish-in-chroot smoke PASSED** (HELLISH_IN_CHROOT_OK),
+  build-all ran under hellish: man_pages [done], iana_etc [done], then **glibc configure
+  failed: "critical programs missing: bison python"**. Root cause: we jumped Ch.6→Ch.8 and
+  SKIPPED **LFS Chapter 7** (additional NATIVE temp tools the chroot needs: gettext, bison,
+  perl, Python, texinfo, util-linux). Not a hellish/script bug — a missing phase.
+- man-pages fix worked (GIT=false). Non-fatal hellish warning persists: "Cannot open
+  /proc/self/stat" on each in-chroot hellish startup (smoke + builds still work) — log for
+  the hardening pass (cosmetic; hellish reads /proc/self/stat at startup in the chroot).
+- doing: agent drafting LFS 12.1 Ch.7 recipes as `build_<pkg>_tmp` PREPENDED to
+  build-system-lib.sh (so build-all's derived ORDER runs them before glibc) + packages.sh
+  Ch.7 section + appended to CH8_SOURCES. man_pages/iana_etc are stamped (will skip).
+- next: integrate Ch.7 recipes (review) → re-run phase-packages (Ch.7 temp tools build,
+  then glibc onward). Then B2/B3 Ch.8 recipes (agent), strip/cleanup, M7.
+- NOTE for resume: build order = Ch.7 _tmp tools → Ch.8 (man_pages, iana_etc, glibc, …);
+  stamps in image /sources/.stamps; `make loopclean` after any killed phase.
+
 ## 2026-06-04 — M2: full Ch.8 wiring done; B1 build launched under hellish-in-chroot
 - did: heredoc fix landed (vendor/42sh 09f6f41, 1738 tests) + image republished (both
   hellish fixes). Ch.8 recipes regenerated for LFS 12.1 (build-system-lib.sh, 26 build_*
