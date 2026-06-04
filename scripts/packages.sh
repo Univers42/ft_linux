@@ -338,7 +338,7 @@ TAR_MD5="" # TODO md5
 # Ch.8 Texinfo: reuse TEXINFO_VERSION=7.1 / TEXINFO_URL / TEXINFO_MD5 above.
 
 VIM_VERSION=9.1.0041
-VIM_URL="https://anduin.linuxfromscratch.org/LFS/vim-${VIM_VERSION}.tar.gz"
+VIM_URL="https://github.com/vim/vim/archive/v${VIM_VERSION}/vim-${VIM_VERSION}.tar.gz"
 VIM_MD5=79dfe62be5d347b1325cbd5ce2a1f9b3
 
 # Eudev — the SysV edition of this project uses eudev (not systemd-udev).
@@ -400,3 +400,7 @@ CH8_SOURCES="$CH8_SOURCES $LIBPIPELINE_URL $VIM_URL $EUDEV_URL $UDEV_LFS_URL"
 CH8_SOURCES="$CH8_SOURCES $PROCPS_URL $E2FSPROGS_URL $SYSKLOGD_URL"
 CH8_SOURCES="$CH8_SOURCES $SYSVINIT_URL $SYSVINIT_PATCH_URL $MAN_DB_URL"
 CH8_SOURCES="$CH8_SOURCES $BASH_PATCH_URL"
+# Ch.8 packages that reuse the Ch.6 toolchain tarballs (cached, but must also be
+# copied into the chroot's /sources for the final native rebuild).
+CH8_SOURCES="$CH8_SOURCES $SED_URL $GREP_URL $BASH_URL $GAWK_URL $DIFFUTILS_URL"
+CH8_SOURCES="$CH8_SOURCES $FINDUTILS_URL $GZIP_URL $MAKE_URL $PATCH_URL $TAR_URL"
