@@ -1369,10 +1369,12 @@ build_eudev() {
     local lfs_rules
     lfs_rules="$(fetch "$UDEV_LFS_URL")"
     tar -xf "$lfs_rules" -C /tmp
-    make -f "/tmp/udev-lfs-${UDEV_LFS_VERSION}/Makefile.lfs" install
+    # Makefile.lfs references udev-lfs-<ver>/*.rules relative to cwd, so run it
+    # from /tmp (where that dir lives), not from the eudev source dir.
+    (cd /tmp && make -f "udev-lfs-${UDEV_LFS_VERSION}/Makefile.lfs" install)
     rm -rf "/tmp/udev-lfs-${UDEV_LFS_VERSION}"
-    # Build the hardware database
-    udevadm hwdb --update
+    # Build the hardware database (non-fatal: needs /sys which may be sparse)
+    udevadm hwdb --update || true
     rm -rf "$src"
 }
 
