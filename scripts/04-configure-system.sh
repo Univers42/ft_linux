@@ -189,6 +189,11 @@ EOF
 # --modules="part_gpt ext2": GRUB needs part_gpt to read the GPT partition
 # table and ext2 to read /boot (ext4 is backward-compatible with the ext2
 # module for the purpose of reading the kernel image and grub files).
+# GRUB mis-detects the kpartx device-mapper partition (/dev/mapper/loopXpN) as an
+# LVM volume ("disk lvm/loopXpN not found"). Pin an explicit device.map so GRUB
+# treats the loop device as (hd0) and the /boot partition as (hd0,gptN).
+mkdir -p "$LFS/boot/grub"
+printf '(hd0) %s\n' "$LOOP" >"$LFS/boot/grub/device.map"
 # Use the TARGET's grub-install (built in Ch.8) inside the chroot — the builder
 # image ships grub-pc-bin/grub-common but not the grub-install wrapper. Inside
 # the chroot, /boot is the boot-directory and $LOOP is visible via the /dev bind.
@@ -196,6 +201,7 @@ chroot "$LFS" /usr/bin/env -i PATH=/usr/bin:/usr/sbin \
     /usr/sbin/grub-install \
     --target=i386-pc \
     --modules="part_gpt ext2" \
+    --no-floppy \
     "$LOOP"
 
 # ============================================================
