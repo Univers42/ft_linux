@@ -7,6 +7,116 @@
 # unpack() / with_clean_build() / fetch() / die() all come from lib.sh.
 # shellcheck disable=SC2164
 
+# === Chapter 7 — additional temporary tools (native, chroot) ===
+# These run INSIDE the chroot with the native compiler but are intentionally
+# stripped-down/temporary installations.  They must be built BEFORE Ch.8
+# because glibc's configure requires bison and Python, and other packages
+# need perl.  Names carry a _tmp suffix to distinguish them from the full
+# Ch.8 final-system builds that come later.
+
+build_gettext_tmp() {
+    # LFS 12.1 §7.14 — only msgfmt, msgmerge, xgettext are needed now.
+    # We skip the shared libraries entirely (--disable-shared) to keep this
+    # temporary and avoid interfering with the final Ch.8 gettext build.
+    local src
+    src="$(unpack "$GETTEXT_URL")"
+    cd "$src"
+    ./configure --disable-shared
+    make
+    cp -v gettext-tools/src/msgfmt \
+          gettext-tools/src/msgmerge \
+          gettext-tools/src/xgettext \
+          /usr/bin
+    rm -rf "$src"
+}
+
+build_bison_tmp() {
+    # LFS 12.1 §7.15 — full install; glibc configure requires bison.
+    local src
+    src="$(unpack "$BISON_URL")"
+    with_clean_build "$src"
+    ../configure --prefix=/usr \
+                 --docdir="/usr/share/doc/bison-${BISON_VERSION}"
+    make
+    make install
+    rm -rf "$src"
+}
+
+build_perl_tmp() {
+    # LFS 12.1 §7.16 — temporary Perl; only core modules, shared lib enabled.
+    # Uses sh Configure (capital C), not autoconf ./configure.
+    # -des: default answers + enable everything + silent mode.
+    local src
+    src="$(unpack "$PERL_URL")"
+    cd "$src"
+    sh Configure -des \
+                 -Dprefix=/usr \
+                 -Dvendorprefix=/usr \
+                 -Duseshrplib \
+                 -Dprivlib=/usr/lib/perl5/5.38/core_perl \
+                 -Darchlib=/usr/lib/perl5/5.38/core_perl \
+                 -Dsitelib=/usr/lib/perl5/5.38/site_perl \
+                 -Dsitearch=/usr/lib/perl5/5.38/site_perl \
+                 -Dvendorlib=/usr/lib/perl5/5.38/vendor_perl \
+                 -Dvendorarch=/usr/lib/perl5/5.38/vendor_perl
+    make
+    make install
+    rm -rf "$src"
+}
+
+build_python_tmp() {
+    # LFS 12.1 §7.17 — temporary Python 3; shared lib, no pip/ensurepip.
+    # Some optional C-extension modules (ssl, etc.) may not build due to
+    # missing dependencies at this stage — that is expected and non-fatal.
+    local src
+    src="$(unpack "$PYTHON_URL")"
+    cd "$src"
+    ./configure --prefix=/usr \
+                --enable-shared \
+                --without-ensurepip
+    make
+    make install
+    rm -rf "$src"
+}
+
+build_texinfo_tmp() {
+    # LFS 12.1 §7.18 — temporary texinfo; plain prefix=/usr install.
+    local src
+    src="$(unpack "$TEXINFO_URL")"
+    with_clean_build "$src"
+    ../configure --prefix=/usr
+    make
+    make install
+    rm -rf "$src"
+}
+
+build_util_linux_tmp() {
+    # LFS 12.1 §7.19 — temporary util-linux.
+    # Many daemons/tools are disabled; only the utilities needed for the
+    # rest of the Ch.7/Ch.8 build are enabled.  Python bindings disabled
+    # (--without-python) to avoid a circular dependency.
+    local src
+    src="$(unpack "$UTIL_LINUX_URL")"
+    cd "$src"
+    mkdir -pv /var/lib/hwclock
+    ./configure --libdir=/usr/lib \
+                --runstatedir=/run \
+                --disable-chfn-chsh \
+                --disable-login \
+                --disable-nologin \
+                --disable-su \
+                --disable-setpriv \
+                --disable-runuser \
+                --disable-pylibmount \
+                --disable-static \
+                --without-python \
+                ADJTIME_PATH=/var/lib/hwclock/adjtime \
+                --docdir="/usr/share/doc/util-linux-${UTIL_LINUX_VERSION}"
+    make
+    make install
+    rm -rf "$src"
+}
+
 # ===========================================================================
 # Chapter 8 — Final system packages (native, chroot)
 # LFS 12.1 order: man-pages → iana-etc → glibc → zlib → bzip2 → xz → zstd

@@ -72,6 +72,35 @@ TAR_URL="https://ftp.gnu.org/gnu/tar/tar-${TAR_VERSION}.tar.xz"
 XZ_VERSION=5.4.6
 XZ_URL="https://tukaani.org/xz/xz-${XZ_VERSION}.tar.xz"
 
+# -- Ch. 7 (temporary tools) ------------------------------------------------
+# Native builds run INSIDE the chroot, before Ch.8.
+# These provide bison/python/perl that glibc's configure requires.
+# Versions and MD5s from LFS 12.1 Chapter 3 package list.
+
+GETTEXT_VERSION=0.22.4
+GETTEXT_URL="https://ftp.gnu.org/gnu/gettext/gettext-${GETTEXT_VERSION}.tar.xz"
+GETTEXT_MD5=2d8507d003ef3ddd1c172707ffa97ed8
+
+BISON_VERSION=3.8.2
+BISON_URL="https://ftp.gnu.org/gnu/bison/bison-${BISON_VERSION}.tar.xz"
+BISON_MD5=c28f119f405a2304ff0a7ccdcc629713
+
+PERL_VERSION=5.38.2
+PERL_URL="https://www.cpan.org/src/5.0/perl-${PERL_VERSION}.tar.xz"
+PERL_MD5=d3957d75042918a23ec0abac4a2b7e0a
+
+PYTHON_VERSION=3.12.2
+PYTHON_URL="https://www.python.org/ftp/python/${PYTHON_VERSION}/Python-${PYTHON_VERSION}.tar.xz"
+PYTHON_MD5=e7c178b97bf8f7ccd677b94d614f7b3c
+
+TEXINFO_VERSION=7.1
+TEXINFO_URL="https://ftp.gnu.org/gnu/texinfo/texinfo-${TEXINFO_VERSION}.tar.xz"
+TEXINFO_MD5=edd9928b4a3f82674bcc3551616eef3b
+
+UTIL_LINUX_VERSION=2.39.3
+UTIL_LINUX_URL="https://www.kernel.org/pub/linux/utils/util-linux/v2.39/util-linux-${UTIL_LINUX_VERSION}.tar.xz"
+UTIL_LINUX_MD5=f3591e6970c017bb4bcd24ae762a98f5
+
 # -- Ch. 8 (final system) ---------------------------------------------------
 # Versions pinned to LFS 12.1.
 # Source: https://www.linuxfromscratch.org/lfs/view/12.1/
@@ -187,3 +216,5 @@ CH8_SOURCES="$CH8_SOURCES $FILE_URL $READLINE_URL $READLINE_PATCH_URL $M4_URL $B
 CH8_SOURCES="$CH8_SOURCES $FLEX_URL $TCL_URL $EXPECT_URL $DEJAGNU_URL $PKGCONF_URL"
 CH8_SOURCES="$CH8_SOURCES $BINUTILS_URL $GMP_URL $MPFR_URL $MPC_URL $ATTR_URL $ACL_URL"
 CH8_SOURCES="$CH8_SOURCES $LIBCAP_URL $LIBXCRYPT_URL $SHADOW_URL $GCC_URL"
+# Ch.7 tarballs also prefetched outside the chroot (same source cache).
+CH8_SOURCES="$CH8_SOURCES $GETTEXT_URL $BISON_URL $PERL_URL $PYTHON_URL $TEXINFO_URL $UTIL_LINUX_URL"
