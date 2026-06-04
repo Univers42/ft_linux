@@ -9,6 +9,11 @@
 set -uo pipefail
 
 HS="${HELLISH:-hellish}"
+# The checks cd into temp dirs, so resolve a path-form HELLISH to absolute now
+# (a bare command name like "hellish" is left to PATH resolution).
+case "$HS" in
+    */*) HS="$(cd "$(dirname "$HS")" && pwd)/$(basename "$HS")" ;;
+esac
 fail=0
 
 chk() {
