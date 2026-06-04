@@ -256,20 +256,30 @@ for both `vendor/42sh` and ft_linux superproject commits) → rebuild + republis
 hellish image → rebuild the builder → re-run the phase. Pushing to `Univers42/*` and
 `make my_shell` (sudo) are user-gated.
 
-**Gates that must stay green after any hellish change:** the ~1703 functional tests,
-`norm`, and the benchmark geomean (perf: libft must be built `-O3` — its default
-Makefile shipped `-O0`, which made hellish far slower than bash).
+**Gates that must stay green after any hellish change:** the **1742** functional tests,
+`norm`, and the benchmark geomean (OVERALL ≥ ~1.0; currently 1.008x, wall 1.211x faster —
+perf: libft must be built `-O3`; its default Makefile shipped `-O0`, slower than bash).
 
 **hellish fixes already landed** (each with a `regress_hellish` case): assignment-only
 command crash (NULL `argv`), bare-`for` crash, `source`/`eval` leading-comment, `exec >
 >(tee)` hang (don't block-wait exec-bound procsubs), `pushd`/`popd` builtins, `set -o
-pipefail`, `[[ … ]]` single-test, brace expansion with a `$var`/quoted prefix, and
-process substitution inheriting non-exported shell vars (`get_envp_all`).
+pipefail`, `[[ … ]]` single-test, brace expansion with a `$var`/quoted prefix, process
+substitution inheriting non-exported shell vars (`get_envp_all`), **line-continuation in
+sourced files** (tokenizer `skip_noise`), **consecutive heredocs** (`extract2` advance_hd),
+**heredoc-body-quote desync in sourced strings** (`extract3` line-by-line collect), and
+**braced `${VAR}` in unquoted heredoc bodies** (`helpers3` `expand_braced`).
 
-**Known hellish gaps (documented, currently un-hit by the build):** `set -e` doesn't
-abort a failing *multi-stage pipeline* (simple cmds do); `[[ … && … ]]` internal logic
-(the shell splits on `&&`); arrays `a=(…)` (only `vm-run.sh`, host/bash). Add a
-`regress_hellish` + `conformance.sh` case for each as it's fixed.
+**Known hellish gaps — ALL verified host-bash-only, NOT hit by the hellish-run build:**
+- `[[ a == a ]]` (double-equals) returns false; only `[[ a = a ]]` works. (conformance.sh,
+  check-hellish.sh — host/bash.)
+- `[[ … && … ]]` / `[[ … || … ]]` internal logic — splits on `&&`. (vm-run.sh, host/bash.)
+  A 2026-06-04 fix attempt **infinite-looped** on `&&`/`||`; a retry needs loop-safe
+  short-circuit eval with correct `!`/`( )`/`||`<`&&` precedence.
+- `set -e` doesn't abort a failing *multi-stage pipeline* (simple cmds do).
+- script-FILE (non-sourced) heredoc with a leading-quote body line (sourced path is fixed).
+- word-path malformed brace `echo "${FOO"` → `ft_assert` crash (reparse_dquote.c) on bad input.
+- arrays `a=(…)` (only `vm-run.sh`, host/bash).
+Each is hellish-completeness hardening; add a `regress_hellish` + `conformance.sh` case as fixed.
 
 **The conformance gate (`scripts/conformance.sh`) must be green before any long build.**
 It diffs every construct the scripts use (sourcing/comments, heredocs, procsub, `exec >

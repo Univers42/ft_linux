@@ -14,6 +14,27 @@ resuming. Format per entry:
 
 ---
 
+## 2026-06-04 — RE-AUDIT pass + hellish gap inventory (post subject-complete)
+- **Re-audit results (all green where it matters):**
+  - hellish `make test`: **1742/1742 PASS** (develop, after 4 merged fixes).
+  - `make bench` (OPT vs bash --posix): OVERALL geomean **1.008x**, hard **1.046x**, wall **1.211x**
+    faster, 0 MISMATCH. `make norm`: clean.
+  - `conformance.sh` (now path-robust): **1 divergence = dbracket-logic `[[ && ]]`** — see below.
+  - subject compliance: re-verified in QEMU (uname/host/parts/net/bash, clean poweroff). Deliverable
+    build/disk.sha256 committed (rebuilt under fully-fixed hellish).
+- **`[[ && ]]` fix attempt CRASHED mid-work** (agent killed; left a hanging WIP on fix/dbracket-logic).
+  WIP **discarded**, develop restored + re-verified (1742 pass). Branch deleted. NOTE for a retry: the
+  abandoned approach **infinite-looped** on `&&`/`||` — a careful loop-safe short-circuit eval is needed.
+- **hellish gap inventory (NONE are hit by the hellish-run build — all verified host-bash-only):**
+  - `[[ a == a ]]` returns FALSE (exit 1) while `[[ a = a ]]` is TRUE — hellish `[[ ]]` doesn't accept
+    `==` (double-equals) string equality. Used only in conformance.sh/check-hellish.sh (host/bash).
+  - `[[ ... && ... ]]` / `[[ ... || ... ]]` internal logic (splits on &&). Used only in vm-run.sh +
+    the conformance test case (host/bash).
+  - script-file (not sourced) heredoc with a leading-quote body line (pre-existing; sourced path fixed).
+  - word-path malformed-brace `echo "${FOO"` → ft_assert crash (reparse_dquote.c:61; malformed input).
+  These are hellish-completeness hardening, NOT subject blockers (the build ran end-to-end under hellish).
+- 4 hellish fixes ARE merged + shipped (line-cont, consecutive-heredoc, heredoc-body-quote, ${VAR}-heredoc).
+
 ## 2026-06-04 — 🎉 SUBJECT COMPLETE: boots in QEMU, ALL criteria verified, shasum written
 - **Autonomous headless QEMU boot (scripts/vm-verify.sh) — every subject criterion PASS:**
   - `uname -r` = **6.6.32-dlesieur** ✓   hostname = **dlesieur** ✓
