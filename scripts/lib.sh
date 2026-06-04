@@ -99,38 +99,60 @@ require_root() {
 }
 
 # -- Loop device helpers -----------------------------------------------------
-# Inside Docker there's no udev, so `losetup --partscan` won't create the
-# /dev/loopXpN nodes. We use kpartx (device-mapper) instead — it creates
-# /dev/mapper/loopXpN nodes that work without udev.
+# Inside Docker there's no udev, so `losetup -P` (partition scan) populates
+# /sys/block/loopX/loopXpN/dev but never creates the /dev/loopXpN device nodes.
+# We previously used kpartx (device-mapper, /dev/mapper/loopXpN), but grub-probe
+# mis-classifies a device-mapper node as an LVM volume and grub-install fails
+# ("disk 'lvm/loopXpN' not found"). So instead we partition-scan with
+# `losetup -P` and mknod the REAL kernel partition nodes /dev/loopXpN ourselves
+# from the major:minor in sysfs — grub-probe handles those as plain (hd0,gptN)
+# partitions, and they mount exactly like the kpartx nodes did.
 #
 # After attach_image, use $(part "$LOOP" N) to get the device path for
 # partition N. Example:  mount "$(part "$LOOP" 4)" "$LFS"
 attach_image() {
     local img="$1"
-    local loop
-    loop="$(losetup --find --show "$img")"
-    # kpartx -a: add mappings; -s: sync (wait for them to appear)
-    kpartx -as "$loop" >/dev/null
-    # Be defensive — give the device-mapper a moment on slow hosts.
-    local n
+    local loop n pd pp dm
+    loop="$(losetup -P --find --show "$img")"
     n="$(basename "$loop")"
-    for _ in 1 2 3 4 5; do
-        [[ -b "/dev/mapper/${n}p1" ]] && break
+    # Wait for the kernel to expose the partition entries in sysfs, then mknod
+    # the matching /dev nodes (no udev in Docker to do it for us).
+    local i
+    for i in 1 2 3 4 5; do
+        if [ -e "/sys/block/${n}/${n}p1/dev" ]; then
+            break
+        fi
         sleep 0.5
+    done
+    for pd in "/sys/block/${n}/${n}"p*; do
+        [ -d "$pd" ] || continue
+        pp="$(basename "$pd")"
+        dm="$(cat "$pd/dev")"
+        if [ ! -b "/dev/$pp" ]; then
+            mknod "/dev/$pp" b "${dm%%:*}" "${dm##*:}"
+        fi
     done
     echo "$loop"
 }
 
 part() {
-    # part <loop-device> <partition-number>  →  /dev/mapper/loopXpN
+    # part <loop-device> <partition-number>  →  /dev/loopXpN
     local loop="$1" n="$2"
-    echo "/dev/mapper/$(basename "$loop")p${n}"
+    echo "/dev/$(basename "$loop")p${n}"
 }
 
 detach_image() {
     local loop="$1"
+    local n pp
     sync
-    kpartx -d "$loop" 2>/dev/null || true
+    n="$(basename "$loop")"
+    # Remove the partition nodes we created (the kernel/loop teardown won't, and
+    # a stale node aliasing a re-attached loop would be a footgun).
+    for pp in "/dev/${n}"p*; do
+        if [ -b "$pp" ]; then
+            rm -f "$pp"
+        fi
+    done
     losetup -d "$loop" 2>/dev/null || true
 }
 
@@ -150,6 +172,19 @@ arm_cleanup() {
     trap '_teardown' EXIT
     trap '_teardown; exit 143' TERM
     trap '_teardown; exit 130' INT
+}
+
+# finish_clean: deterministic teardown for the SUCCESS path.
+# hellish does not fire the EXIT trap when `exec > >(tee …)` is active (verified:
+# the redirection from phase_start swallows it), so on a clean run the loop would
+# leak until `make loopclean`. Call this explicitly at the end of a phase, right
+# before phase_end, to unwind mounts + detach the loop now. We also clear the
+# EXIT trap so bash (which *does* fire it) doesn't run _teardown a second time.
+# The TERM/INT traps stay armed as the safety net for the kill paths.
+# _teardown is idempotent, so a stray double-fire is harmless either way.
+finish_clean() {
+    _teardown
+    trap - EXIT
 }
 
 # -- Source tarball helpers --------------------------------------------------

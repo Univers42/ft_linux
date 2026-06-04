@@ -175,13 +175,18 @@ ln -sf /usr/share/zoneinfo/UTC "$LFS/etc/localtime" 2>/dev/null || true
 # are listed; the last one listed becomes the "preferred" console for /dev/console).
 info "Installing GRUB to $LOOP (i386-pc, /boot = gpt2)"
 mkdir -p "$LFS/boot/grub"
+# NB: use the UNbraced $KERNEL_FULL here, not ${KERNEL_FULL}. hellish mangles a
+# braced ${VAR} inside a heredoc body to the literal "{{VAR" (bash expands it
+# correctly) — a separate hellish heredoc bug. Unbraced $KERNEL_FULL expands
+# correctly under BOTH bash and hellish, so the kernel path written here matches
+# the real /boot/vmlinuz-$KERNEL_FULL produced by phase 3.
 cat > "$LFS/boot/grub/grub.cfg" <<EOF
 set default=0
 set timeout=5
 
-menuentry "ft_linux ${KERNEL_FULL}" {
+menuentry "ft_linux $KERNEL_FULL" {
     set root=(hd0,gpt2)
-    linux /vmlinuz-${KERNEL_FULL} root=LABEL=root ro console=ttyS0,115200 console=tty0
+    linux /vmlinuz-$KERNEL_FULL root=LABEL=root ro console=ttyS0,115200 console=tty0
     # initrd not used — we rely on built-in kernel drivers (defconfig + virtio).
 }
 EOF
@@ -189,22 +194,12 @@ EOF
 # --modules="part_gpt ext2": GRUB needs part_gpt to read the GPT partition
 # table and ext2 to read /boot (ext4 is backward-compatible with the ext2
 # module for the purpose of reading the kernel image and grub files).
-# GRUB mis-detects the kpartx device-mapper partition (/dev/mapper/loopXpN) as an
-# LVM volume ("disk lvm/loopXpN not found"). Give the loop REAL kernel partition
-# nodes (/dev/loopXpN) and re-mount /boot from one, so grub-probe sees a plain
-# (hd0,gptN) partition instead of a device-mapper node.
-lp="$(basename "$LOOP")"
-partx -a "$LOOP" 2>/dev/null || true
-for pd in "/sys/block/$lp/$lp"p*; do
-    [ -d "$pd" ] || continue
-    pp="$(basename "$pd")"
-    dm="$(cat "$pd/dev")"
-    [ -b "/dev/$pp" ] || mknod "/dev/$pp" b "${dm%%:*}" "${dm##*:}"
-done
-if [ -b "/dev/${lp}p2" ]; then
-    umount "$LFS/boot" 2>/dev/null || true
-    mount "/dev/${lp}p2" "$LFS/boot"
-fi
+#
+# attach_image() now exposes REAL kernel partition nodes (/dev/loopXpN) instead
+# of kpartx device-mapper nodes, so grub-probe sees /boot as a plain (hd0,gpt2)
+# partition (no more "disk 'lvm/loopXpN' not found"). /boot is already mounted
+# from $(part "$LOOP" 2) above, so nothing to re-mount here.
+#
 # Pin an explicit device.map so GRUB treats the loop device as (hd0).
 mkdir -p "$LFS/boot/grub"
 printf '(hd0) %s\n' "$LOOP" >"$LFS/boot/grub/device.map"
@@ -228,5 +223,9 @@ chroot "$LFS" /usr/bin/env -i \
     HOME=/root \
     PATH=/usr/bin:/usr/sbin:/bin:/sbin \
     /bin/bash -c "passwd -d root" || true
+
+# Unwind the chroot mounts and detach the loop NOW (deterministic on the success
+# path — hellish's EXIT trap doesn't fire under the phase_start tee redirection).
+finish_clean
 
 phase_end
