@@ -145,7 +145,11 @@ chroot_hellish() {
         /tools/bin/hellish "$@"
 }
 
-step "07-prepare-virtfs" prepare_virtfs
+# Virtual FS mounts are per-container (ephemeral) — run EVERY invocation, never
+# stamp them. Skipping them on re-runs left $LFS/dev without the real /dev/null
+# device (so `>/dev/null` made it a regular file -> perl Configure aborts) and
+# left /proc unmounted (the "Cannot open /proc/self/stat" warnings).
+prepare_virtfs
 step "07-prepare-skeleton" prepare_skeleton
 stage_hellish
 info "Pre-fetching Ch.8 sources into the chroot"
