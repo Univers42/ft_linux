@@ -1,6 +1,11 @@
 # ft_linux build environment
-# Debian 12 + the LFS host-system requirements.
+# Debian 12 + the LFS host-system requirements, with hellish (vendor/42sh) as
+# the build-script interpreter — pulled as a pinned image from Docker Hub,
+# itself built + published from the vendor/42sh commit (make hellish-image).
 # Reference: https://www.linuxfromscratch.org/lfs/view/stable/chapter02/hostreqs.html
+ARG HELLISH_IMAGE=dlesieur/hellish-shell:latest
+FROM ${HELLISH_IMAGE} AS hellish
+
 FROM debian:12-slim
 
 ENV DEBIAN_FRONTEND=noninteractive \
@@ -19,8 +24,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         mount kpartx \
         grub-pc-bin grub-common xorriso \
         rsync git ncurses-dev libssl-dev libelf-dev \
+        libreadline8 libtinfo6 \
         sudo procps less vim-tiny && \
     rm -rf /var/lib/apt/lists/*
+
+# hellish: the build-script interpreter (vendor/42sh), from the pinned image.
+COPY --from=hellish /usr/local/bin/hellish /usr/local/bin/hellish
 
 # An unprivileged "lfs" user is recommended by the book for the toolchain
 # phase. We keep root available for the chroot phase via sudo NOPASSWD.

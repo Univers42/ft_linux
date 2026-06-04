@@ -1,0 +1,7 @@
+# ShellCheck config for ft_linux scripts.
+# Scripts are bash and source lib.sh/packages.sh via dynamic paths.
+shell=bash
+external-sources=true
+source-path=scripts
+# Sourced via "$(dirname "$0")/..." which ShellCheck can't always resolve.
+disable=SC1090,SC1091

@@ -59,32 +59,32 @@ export CONFIG_SITE="$LFS/usr/share/config.site"
 # --------------------------------------------------------------------------
 # LFS Ch. 5 — cross-toolchain
 # --------------------------------------------------------------------------
-step "ch5-binutils-pass1"  build_binutils_pass1
-step "ch5-gcc-pass1"       build_gcc_pass1
-step "ch5-linux-headers"   build_linux_headers
-step "ch5-glibc"           build_glibc
-step "ch5-libstdcxx"       build_libstdcxx
+step "ch5-binutils-pass1" build_binutils_pass1
+step "ch5-gcc-pass1" build_gcc_pass1
+step "ch5-linux-headers" build_linux_headers
+step "ch5-glibc" build_glibc
+step "ch5-libstdcxx" build_libstdcxx
 
 # --------------------------------------------------------------------------
 # LFS Ch. 6 — cross-compile temporary tools
 # --------------------------------------------------------------------------
-step "ch6-m4"          build_m4
-step "ch6-ncurses"     build_ncurses
-step "ch6-bash"        build_bash
-step "ch6-coreutils"   build_coreutils
-step "ch6-diffutils"   build_diffutils
-step "ch6-file"        build_file
-step "ch6-findutils"   build_findutils
-step "ch6-gawk"        build_gawk
-step "ch6-grep"        build_grep
-step "ch6-gzip"        build_gzip
-step "ch6-make"        build_make
-step "ch6-patch"       build_patch
-step "ch6-sed"         build_sed
-step "ch6-tar"         build_tar
-step "ch6-xz"          build_xz
+step "ch6-m4" build_m4
+step "ch6-ncurses" build_ncurses
+step "ch6-bash" build_bash
+step "ch6-coreutils" build_coreutils
+step "ch6-diffutils" build_diffutils
+step "ch6-file" build_file
+step "ch6-findutils" build_findutils
+step "ch6-gawk" build_gawk
+step "ch6-grep" build_grep
+step "ch6-gzip" build_gzip
+step "ch6-make" build_make
+step "ch6-patch" build_patch
+step "ch6-sed" build_sed
+step "ch6-tar" build_tar
+step "ch6-xz" build_xz
 step "ch6-binutils-pass2" build_binutils_pass2
-step "ch6-gcc-pass2"      build_gcc_pass2
+step "ch6-gcc-pass2" build_gcc_pass2
 
 info ""
 info "Cross-toolchain build complete."

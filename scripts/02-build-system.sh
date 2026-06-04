@@ -22,9 +22,9 @@ mount "$(part "$LOOP" 2)" "$LFS/boot"
 # Virtual filesystems required for chroot
 mount --bind /dev "$LFS/dev"
 mount -t devpts devpts -o gid=5,mode=620 "$LFS/dev/pts"
-mount -t proc  proc    "$LFS/proc"
-mount -t sysfs sysfs   "$LFS/sys"
-mount -t tmpfs tmpfs   "$LFS/run"
+mount -t proc proc "$LFS/proc"
+mount -t sysfs sysfs "$LFS/sys"
+mount -t tmpfs tmpfs "$LFS/run"
 
 # --------------------------------------------------------------------------
 # Enter the chroot and build packages.

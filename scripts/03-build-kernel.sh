@@ -62,8 +62,8 @@ info "Installing kernel image and modules into the target system"
 # We're not chrooted yet; install paths are relative to $LFS via INSTALL_*
 make INSTALL_MOD_PATH="$LFS" modules_install
 cp arch/x86/boot/bzImage "$LFS/boot/vmlinuz-${KERNEL_FULL}"
-cp System.map            "$LFS/boot/System.map-${KERNEL_FULL}"
-cp .config               "$LFS/boot/config-${KERNEL_FULL}"
+cp System.map "$LFS/boot/System.map-${KERNEL_FULL}"
+cp .config "$LFS/boot/config-${KERNEL_FULL}"
 
 # Persist the kernel config back into the repo so the build is reproducible.
 mkdir -p /project/configs/kernel 2>/dev/null || true
@@ -73,7 +73,7 @@ info "  → on the host, copy it into configs/kernel/.config to commit it"
 
 info "Verifying expected paths"
 test -f "$LFS/boot/vmlinuz-${KERNEL_FULL}" || die "Missing kernel binary"
-test -d "$LFS$SRC_DIR_TARGET"              || die "Missing kernel sources in target"
+test -d "$LFS$SRC_DIR_TARGET" || die "Missing kernel sources in target"
 info "  /boot/vmlinuz-${KERNEL_FULL}  ✓"
 info "  ${SRC_DIR_TARGET}             ✓"
 

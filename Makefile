@@ -14,6 +14,25 @@ COMPOSE        := docker compose -f docker/docker-compose.yml
 STUDENT_LOGIN  := dlesieur
 KERNEL_VERSION := 6.6.32
 
+# Interpreter the build phases run under. Pure hellish (our 42sh); override
+# only for debugging: make phase-disk RUNNER=bash
+RUNNER         := hellish
+
+# Watchdog (tools/watchdog) — compiled inside the builder into the gitignored
+# build/ tree; guards in-container steps against stalls/deadlocks.
+WATCHDOG_BIN   := $(BUILD_DIR)/bin/watchdog
+WD_SRC         := tools/watchdog/watchdog.c
+
+# Per-phase host-side wall-clock caps (seconds): a backstop so a hung phase can
+# never wedge the host. SIGTERM first (lets cleanup traps run), SIGKILL after.
+# The in-container watchdog catches per-step stalls much faster.
+T_DISK         ?= 900
+T_TOOLCHAIN    ?= 10800
+T_PACKAGES     ?= 36000
+T_KERNEL       ?= 7200
+T_SYSTEM       ?= 1800
+HOST_GUARD     := timeout --kill-after=120
+
 .DEFAULT_GOAL := help
 
 # ----------------------------------------------------------------------------
@@ -29,6 +48,9 @@ help:
 	@echo "  make run          Boot build/ft_linux.img in QEMU"
 	@echo "  make shell        Open shell in the build container (debugging)"
 	@echo "  make shasum       Generate build/disk.sha256 for submission"
+	@echo "  make lint         Static-check scripts/ (shellcheck + shfmt diff)"
+	@echo "  make fmt          Auto-format scripts/ in place (shfmt)"
+	@echo "  make check-hellish  Run scripts/ under hellish vs bash, report divergences"
 	@echo "  make clean        Remove build/ artifacts"
 	@echo "  make distclean    clean + remove Docker image and volumes"
 	@echo ""
@@ -61,6 +83,20 @@ image:
 	$(COMPOSE) build
 
 # ----------------------------------------------------------------------------
+# Watchdog — compiled in-container (honours "all compilation in Docker"),
+# rebuilt only when the source changes.
+# ----------------------------------------------------------------------------
+$(WATCHDOG_BIN): $(WD_SRC) | image
+	@mkdir -p $(BUILD_DIR)/bin
+	$(COMPOSE) run --rm builder sh -c 'mkdir -p /output/bin && \
+		gcc -O2 -Wall -Wextra -Werror -std=c11 -static \
+		-o /output/bin/watchdog /project/tools/watchdog/watchdog.c'
+
+.PHONY: watchdog
+watchdog: $(WATCHDOG_BIN)
+	@echo "OK — watchdog at $(WATCHDOG_BIN)"
+
+# ----------------------------------------------------------------------------
 # Full build pipeline
 # ----------------------------------------------------------------------------
 .PHONY: build
@@ -75,21 +111,21 @@ build: image phase-disk phase-toolchain phase-packages phase-kernel phase-system
 # ----------------------------------------------------------------------------
 .PHONY: phase-disk phase-toolchain phase-packages phase-kernel phase-system
 
-phase-disk: image
+phase-disk: image $(WATCHDOG_BIN)
 	@mkdir -p $(BUILD_DIR)/logs
-	$(COMPOSE) run --rm builder /project/scripts/00-init-disk.sh
+	$(HOST_GUARD) $(T_DISK) $(COMPOSE) run --rm builder $(RUNNER) /project/scripts/00-init-disk.sh
 
-phase-toolchain: image
-	$(COMPOSE) run --rm builder /project/scripts/01-build-toolchain.sh
+phase-toolchain: image $(WATCHDOG_BIN)
+	$(HOST_GUARD) $(T_TOOLCHAIN) $(COMPOSE) run --rm builder $(RUNNER) /project/scripts/01-build-toolchain.sh
 
-phase-packages: image
-	$(COMPOSE) run --rm builder /project/scripts/02-build-system.sh
+phase-packages: image $(WATCHDOG_BIN)
+	$(HOST_GUARD) $(T_PACKAGES) $(COMPOSE) run --rm builder $(RUNNER) /project/scripts/02-build-system.sh
 
-phase-kernel: image
-	$(COMPOSE) run --rm builder /project/scripts/03-build-kernel.sh
+phase-kernel: image $(WATCHDOG_BIN)
+	$(HOST_GUARD) $(T_KERNEL) $(COMPOSE) run --rm builder $(RUNNER) /project/scripts/03-build-kernel.sh
 
-phase-system: image
-	$(COMPOSE) run --rm builder /project/scripts/04-configure-system.sh
+phase-system: image $(WATCHDOG_BIN)
+	$(HOST_GUARD) $(T_SYSTEM) $(COMPOSE) run --rm builder $(RUNNER) /project/scripts/04-configure-system.sh
 
 # ----------------------------------------------------------------------------
 # QEMU boot — runs on host (needs KVM passthrough), no install required
@@ -119,6 +155,27 @@ shasum:
 	@echo "==> Hashing $(IMAGE_PATH) (this can take a minute on a 20 GB image)…"
 	@sha256sum $(IMAGE_PATH) | tee $(SHA_PATH)
 	@echo "==> Wrote $(SHA_PATH). Commit this file, not the image."
+
+# ----------------------------------------------------------------------------
+# Quality: static checks + hellish compatibility (host tools, nothing installed)
+# ----------------------------------------------------------------------------
+SCRIPTS := $(wildcard scripts/*.sh) docker/entrypoint.sh
+
+.PHONY: lint fmt check-hellish
+lint:
+	@command -v shellcheck >/dev/null 2>&1 || { echo "ERROR: shellcheck not found on host"; exit 1; }
+	@command -v shfmt      >/dev/null 2>&1 || { echo "ERROR: shfmt not found on host"; exit 1; }
+	shellcheck -x $(SCRIPTS)
+	shfmt -d -i 4 -ci $(SCRIPTS)
+	@echo "OK — scripts lint clean."
+
+fmt:
+	@command -v shfmt >/dev/null 2>&1 || { echo "ERROR: shfmt not found on host"; exit 1; }
+	shfmt -w -i 4 -ci $(SCRIPTS)
+
+check-hellish:
+	@command -v hellish >/dev/null 2>&1 || { echo "ERROR: hellish not found on host"; exit 1; }
+	@bash scripts/check-hellish.sh
 
 # ----------------------------------------------------------------------------
 # Cleanup

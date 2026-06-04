@@ -1,6 +1,10 @@
 #!/bin/bash
 # Shared helpers, constants, and logging for all phase scripts.
 # Source this from each phase: `. "$(dirname "$0")/lib.sh"`
+#
+# Constants here (KERNEL_FULL, HOSTNAME_TARGET, PART_*) are consumed by the
+# sourcing phase scripts, so ShellCheck can't see their use from this file.
+# shellcheck disable=SC2034
 
 set -euo pipefail
 
@@ -14,6 +18,36 @@ HOSTNAME_TARGET="${STUDENT_LOGIN}"
 # -- LFS paths (inside the container) ---------------------------------------
 LFS="${LFS:-/mnt/lfs}"
 LFS_TGT="${LFS_TGT:-x86_64-lfs-linux-gnu}"
+
+# -- Parallelism (resource-aware) -------------------------------------------
+# compute_jobs: min(nproc, MemAvailableGB/2). Caps `make -j` so the RAM-hungry
+# builds (gcc, glibc, binutils) can't OOM the host. Set at runtime here because
+# docker-compose cannot expand $(nproc) in its environment block.
+compute_jobs() {
+    local cpus mem_kb mem_gb half
+    cpus="$(nproc 2>/dev/null || echo 1)"
+    mem_kb="$(awk '/^MemAvailable:/{print $2; exit}' /proc/meminfo 2>/dev/null || echo 0)"
+    mem_gb=$((mem_kb / 1024 / 1024))
+    half=$((mem_gb / 2))
+    if [ "$half" -lt 1 ]; then half=1; fi
+    if [ "$cpus" -lt "$half" ]; then echo "$cpus"; else echo "$half"; fi
+}
+JOBS="${JOBS:-$(compute_jobs)}"
+export MAKEFLAGS="-j${JOBS}"
+
+# -- Watchdog (timeouts on long/risky steps; src in tools/watchdog) ----------
+# guard <idle_s> <total_s> <cmd...> — run under the watchdog (kills the whole
+# process group on stall/total timeout), or directly if the binary is absent.
+WATCHDOG="${WATCHDOG:-/output/bin/watchdog}"
+guard() {
+    local idle="$1" total="$2"
+    shift 2
+    if [ -x "$WATCHDOG" ]; then
+        "$WATCHDOG" -i "$idle" -t "$total" -- "$@"
+    else
+        "$@"
+    fi
+}
 
 # -- Image layout ------------------------------------------------------------
 IMG_PATH="${IMG_PATH:-/output/ft_linux.img}"
@@ -29,7 +63,8 @@ mkdir -p "$LOG_DIR"
 _phase_name=""
 phase_start() {
     _phase_name="$1"
-    local stamp; stamp="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+    local stamp
+    stamp="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
     echo ""
     echo "============================================================"
     echo "  PHASE: $_phase_name"
@@ -39,16 +74,20 @@ phase_start() {
 }
 
 phase_end() {
-    local stamp; stamp="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+    local stamp
+    stamp="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
     echo ""
     echo "------------------------------------------------------------"
     echo "  PHASE DONE: $_phase_name   end: $stamp"
     echo "------------------------------------------------------------"
 }
 
-info()  { echo "[i] $*"; }
-warn()  { echo "[!] $*" >&2; }
-die()   { echo "[x] $*" >&2; exit 1; }
+info() { echo "[i] $*" >&2; }
+warn() { echo "[!] $*" >&2; }
+die() {
+    echo "[x] $*" >&2
+    exit 1
+}
 
 # -- Guards ------------------------------------------------------------------
 require_in_container() {
@@ -73,7 +112,8 @@ attach_image() {
     # kpartx -a: add mappings; -s: sync (wait for them to appear)
     kpartx -as "$loop" >/dev/null
     # Be defensive — give the device-mapper a moment on slow hosts.
-    local n="$(basename "$loop")"
+    local n
+    n="$(basename "$loop")"
     for _ in 1 2 3 4 5; do
         [[ -b "/dev/mapper/${n}p1" ]] && break
         sleep 0.5
@@ -116,18 +156,19 @@ fetch() {
 }
 
 extract() {
-    # extract <tarball> [dest-dir]
-    # Extracts into $LFS/sources/<package-name>/ by default.
-    # Echoes the resulting directory path.
+    # extract <tarball> [dest-dir]; echoes the extracted top-level dir path.
+    # Idempotent + reliable: derive the dir name from the tarball itself
+    # (not a before/after ls diff, which breaks when a prior run left the dir
+    # behind) and clear any stale copy before extracting.
     local tarball="$1"
     local dest="${2:-$LFS/sources}"
+    local top
     mkdir -p "$dest"
-    local before; before="$(ls "$dest" 2>/dev/null)"
+    top="$(tar -tf "$tarball" 2>/dev/null | head -1 | cut -d/ -f1)"
+    [ -n "$top" ] || return 1
+    rm -rf "${dest:?}/$top"
     tar -xf "$tarball" -C "$dest"
-    local after;  after="$(ls "$dest" 2>/dev/null)"
-    # The newly created directory is whatever's in "after" but not "before".
-    comm -13 <(echo "$before" | sort) <(echo "$after" | sort) | head -1 | \
-        xargs -I{} echo "$dest/{}"
+    echo "$dest/$top"
 }
 
 with_clean_build() {

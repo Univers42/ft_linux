@@ -27,6 +27,7 @@ services:
       KERNEL_VERSION: 6.6.32
       LFS: /mnt/lfs
       LFS_TGT: x86_64-lfs-linux-gnu
-      MAKEFLAGS: "-j$(nproc)"
+      # MAKEFLAGS is set at runtime in scripts/lib.sh (resource-aware -j): compose
+      # does NOT expand $(...) here, so a literal "-j$(nproc)" would break make.
     tty: true
     stdin_open: true

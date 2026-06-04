@@ -23,8 +23,8 @@ if [[ -f "$IMG_PATH" ]]; then
     need_create=0
     # Attach briefly to inspect partition state
     PROBE_LOOP="$(attach_image "$IMG_PATH")"
-    if blkid "$(part "$PROBE_LOOP" 2)" 2>/dev/null | grep -q 'TYPE="ext4"' && \
-       blkid "$(part "$PROBE_LOOP" 4)" 2>/dev/null | grep -q 'TYPE="ext4"'; then
+    if blkid "$(part "$PROBE_LOOP" 2)" 2>/dev/null | grep -q 'TYPE="ext4"' &&
+        blkid "$(part "$PROBE_LOOP" 4)" 2>/dev/null | grep -q 'TYPE="ext4"'; then
         info "  partitions p2 and p4 already formatted as ext4"
         need_format=0
     else
@@ -55,7 +55,7 @@ if [[ "$need_format" -eq 1 ]]; then
 
     info "Formatting partitions"
     mkfs.ext4 -F -L boot "$(part "$LOOP" 2)"
-    mkswap      -L swap  "$(part "$LOOP" 3)"
+    mkswap -L swap "$(part "$LOOP" 3)"
     mkfs.ext4 -F -L root "$(part "$LOOP" 4)"
 
     # Verify the filesystems are actually there

@@ -1,6 +1,9 @@
 # LFS 12.x package versions and download URLs.
 # Pinned versions — change here, not in build scripts.
 # Source of truth: https://www.linuxfromscratch.org/lfs/view/stable/
+#
+# Pure constants, sourced by the build scripts — "unused" here by design.
+# shellcheck disable=SC2034
 
 # -- Toolchain (Ch. 5-6) ----------------------------------------------------
 BINUTILS_VERSION=2.42
