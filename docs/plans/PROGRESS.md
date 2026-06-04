@@ -14,6 +14,24 @@ resuming. Format per entry:
 
 ---
 
+## 2026-06-04 — 🎉 SUBJECT COMPLETE: boots in QEMU, ALL criteria verified, shasum written
+- **Autonomous headless QEMU boot (scripts/vm-verify.sh) — every subject criterion PASS:**
+  - `uname -r` = **6.6.32-dlesieur** ✓   hostname = **dlesieur** ✓
+  - ≥3 partitions ✓ (bios_grub/boot/swap/root; lsblk=6 nodes)   fstab LABEL= root/boot/swap ✓
+  - **wget fetched http://example.com (904b) — network WORKS** ✓ (static eth0 10.0.2.15, gw 10.0.2.2)
+  - bash-from-source login shell ✓   eudev udevd ✓   SysVinit + bootscripts ✓   GRUB2 BIOS ✓
+  - clean boot (no Press-Enter pause) → `dlesieur login:` → passwordless root → clean `reboot: Power down`.
+- last boot fixes (committed): root=/dev/vda4 (no initramfs can't resolve LABEL=); console=tty0
+  console=ttyS0 (serial = /dev/console); fstab /dev/shm+/sys/fs/cgroup (mountvirtfs FAIL→Press-Enter);
+  /usr/bin/udevadm symlink (eudev --bindir=/usr/sbin vs bootscript /bin/udevadm); image chmod 666 via
+  container so host QEMU can boot it.
+- **`make shasum` → build/disk.sha256** committed (force-add past build/ gitignore):
+  `d2d77944d4208e4109e86b38eda7a9e881057daa87af0118de80a8eeb16cb946`.
+- NOTE for audit: running /bin/bash reports 5.2.25 but BASH_VERSION pin is 5.2.21 — investigate.
+- 4th hellish bug found (deferred): braced `${VAR}` in heredoc body mangles to `{{VAR` (workaround:
+  unbraced `$KERNEL_FULL` in 04). Fix in vendor/42sh + regress, then can un-workaround.
+- next: deferred hellish hardening (${VAR}-heredoc, [[ && ]], script-file heredoc edge) + full re-audit.
+
 ## 2026-06-04 — M7: kernel + system config; final blocker = GRUB-on-loop in container
 - DONE: kernel **6.6.32-dlesieur** built (defconfig + virtio/ext4/8250/devtmpfs built-in,
   no initramfs) → /boot/vmlinuz-6.6.32-dlesieur. Added **wget** (HTTP, --without-ssl) for
