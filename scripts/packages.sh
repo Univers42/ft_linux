@@ -175,3 +175,15 @@ SHADOW_URL="https://github.com/shadow-maint/shadow/releases/download/${SHADOW_VE
 SHADOW_MD5=452b0e59f08bf618482228ba3732d0ae
 
 # Ch.8 GCC: same version as Ch.5/6 cross-build (GCC_VERSION=13.2.0). Reuse GCC_URL.
+
+# -- Ch.8 prefetch list ------------------------------------------------------
+# Every tarball + patch the chroot build needs. Fetched into the source cache
+# OUTSIDE the chroot (network there); the in-chroot build extracts from
+# /sources. Re-fetching already-cached toolchain tarballs is a no-op. Built up
+# line-by-line (no continuations) so it is robust under any shell.
+CH8_SOURCES="$MAN_PAGES_URL $IANA_ETC_URL $GLIBC_URL $GLIBC_PATCH_URL $TZDATA_URL"
+CH8_SOURCES="$CH8_SOURCES $ZLIB_URL $BZIP2_URL $BZIP2_PATCH_URL $XZ_URL $ZSTD_URL"
+CH8_SOURCES="$CH8_SOURCES $FILE_URL $READLINE_URL $READLINE_PATCH_URL $M4_URL $BC_URL"
+CH8_SOURCES="$CH8_SOURCES $FLEX_URL $TCL_URL $EXPECT_URL $DEJAGNU_URL $PKGCONF_URL"
+CH8_SOURCES="$CH8_SOURCES $BINUTILS_URL $GMP_URL $MPFR_URL $MPC_URL $ATTR_URL $ACL_URL"
+CH8_SOURCES="$CH8_SOURCES $LIBCAP_URL $LIBXCRYPT_URL $SHADOW_URL $GCC_URL"

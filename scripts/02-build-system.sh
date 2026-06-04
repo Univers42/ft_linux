@@ -7,6 +7,7 @@
 # build-all.sh under hellish. Re-entrant: per-package stamps live in the image.
 
 . "$(dirname "$0")/lib.sh"
+. "$(dirname "$0")/packages.sh"
 
 require_in_container
 require_root
@@ -109,7 +110,7 @@ stage_hellish() {
     install -m 755 /usr/local/bin/hellish "$LFS/tools/bin/hellish"
     local l
     for l in libreadline.so libtinfo.so; do
-        cp -av /lib/x86_64-linux-gnu/"$l"* "$LFS/tools/lib/" 2>/dev/null || \
+        cp -av /lib/x86_64-linux-gnu/"$l"* "$LFS/tools/lib/" 2>/dev/null ||
             cp -av /usr/lib/x86_64-linux-gnu/"$l"* "$LFS/tools/lib/" 2>/dev/null || true
     done
     if [ -x /output/bin/watchdog ]; then
@@ -117,7 +118,21 @@ stage_hellish() {
     fi
     install -m 644 "$SCRIPTS_DIR/packages.sh" "$LFS/sources/scripts/packages.sh"
     for f in chroot-lib.sh build-system-lib.sh build-all.sh; do
-        [ -f "$SCRIPTS_DIR/$f" ] && install -m 644 "$SCRIPTS_DIR/$f" "$LFS/sources/scripts/$f"
+        if [ -f "$SCRIPTS_DIR/$f" ]; then
+            install -m 644 "$SCRIPTS_DIR/$f" "$LFS/sources/scripts/$f"
+        fi
+    done
+}
+
+# -- Pre-fetch Ch.8 sources (outside the chroot: network lives here) ---------
+# Downloads into the cache, then copies into the image's /sources so the
+# network-less chroot can extract them. Idempotent (cached fetches are no-ops).
+prefetch_sources() {
+    local url f
+    mkdir -p "$SRC_CACHE" "$LFS/sources"
+    for url in $CH8_SOURCES; do
+        f="$(fetch "$url")"
+        cp -n "$f" "$LFS/sources/" 2>/dev/null || true
     done
 }
 
@@ -133,6 +148,8 @@ chroot_hellish() {
 step "07-prepare-virtfs" prepare_virtfs
 step "07-prepare-skeleton" prepare_skeleton
 stage_hellish
+info "Pre-fetching Ch.8 sources into the chroot"
+prefetch_sources
 
 info "Smoke test: hellish inside the chroot"
 # shellcheck disable=SC2016  # snippet must be evaluated by hellish, not here
