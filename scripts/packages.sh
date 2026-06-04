@@ -245,7 +245,7 @@ GPERF_URL="https://ftp.gnu.org/gnu/gperf/gperf-${GPERF_VERSION}.tar.gz"
 GPERF_MD5=9e251c0a618ad0824b51117d5d9db87e
 
 EXPAT_VERSION=2.6.0
-EXPAT_URL="https://prdownloads.sourceforge.net/expat/expat-${EXPAT_VERSION}.tar.xz"
+EXPAT_URL="https://github.com/libexpat/libexpat/releases/download/R_2_6_0/expat-${EXPAT_VERSION}.tar.xz"
 EXPAT_MD5=bd169cb11f4b9bdfddadf9e88a5c4d4b
 
 INETUTILS_VERSION=2.5

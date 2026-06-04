@@ -131,8 +131,11 @@ prefetch_sources() {
     local url f
     mkdir -p "$SRC_CACHE" "$LFS/sources"
     for url in $CH8_SOURCES; do
-        f="$(fetch "$url")"
-        cp -n "$f" "$LFS/sources/" 2>/dev/null || true
+        if f="$(fetch "$url" 2>/dev/null)" && [ -f "$f" ]; then
+            cp -n "$f" "$LFS/sources/" 2>/dev/null || true
+        else
+            warn "prefetch FAILED (its package will block): $url"
+        fi
     done
 }
 
