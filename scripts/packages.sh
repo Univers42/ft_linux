@@ -410,3 +410,11 @@ WGET_VERSION=1.21.4
 WGET_URL="https://ftp.gnu.org/gnu/wget/wget-${WGET_VERSION}.tar.gz"
 WGET_MD5="" # TODO md5
 CH8_SOURCES="$CH8_SOURCES $WGET_URL"
+
+# -- lfs-bootscripts (Ch.9) -------------------------------------------------
+# Provides the SysVinit rc scripts, network service scripts (ipv4-static, …),
+# udev helper scripts, and the make install target that populates /etc/rc.d.
+# LFS 12.1 uses version 20230728.
+LFS_BOOTSCRIPTS_VERSION=20230728
+LFS_BOOTSCRIPTS_URL="https://www.linuxfromscratch.org/lfs/downloads/12.1/lfs-bootscripts-${LFS_BOOTSCRIPTS_VERSION}.tar.xz"
+LFS_BOOTSCRIPTS_MD5=3e9f350634fd6eabf8b02ccd4f6ca8b1
