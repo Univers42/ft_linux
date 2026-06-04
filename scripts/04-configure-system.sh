@@ -58,6 +58,10 @@ chroot "$LFS" /usr/bin/env -i \
     PATH=/usr/bin:/usr/sbin:/bin:/sbin \
     /bin/bash -c "cd /sources/$(basename "$BOOTSCRIPTS_SRC") && make install"
 
+# eudev was built with --bindir=/usr/sbin, but the udev bootscripts call
+# /bin/udevadm (= /usr/bin/udevadm on merged-/usr). Symlink so they find it.
+ln -sf /usr/sbin/udevadm "$LFS/usr/bin/udevadm"
+
 # ============================================================
 # 2. Hostname (subject requirement: student login)
 # ============================================================
@@ -92,6 +96,8 @@ proc            /proc    proc    nosuid,noexec,nodev 0       0
 sysfs           /sys     sysfs   nosuid,noexec,nodev 0       0
 devpts          /dev/pts devpts  gid=5,mode=620      0       0
 tmpfs           /run     tmpfs   defaults            0       0
+tmpfs           /dev/shm tmpfs   nosuid,nodev        0       0
+cgroup2         /sys/fs/cgroup cgroup2 nosuid,noexec,nodev 0   0
 EOF
 
 # ============================================================
