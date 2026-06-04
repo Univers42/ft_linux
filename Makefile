@@ -32,6 +32,10 @@ T_PACKAGES     ?= 36000
 T_KERNEL       ?= 7200
 T_SYSTEM       ?= 1800
 HOST_GUARD     := timeout --kill-after=120
+# In-container watchdog: kills a phase whose whole tree produces no output for
+# IDLE_STALL seconds (deadlock detection, much faster than the total cap).
+WD_IN          := /output/bin/watchdog
+IDLE_STALL     ?= 1200
 
 .DEFAULT_GOAL := help
 
@@ -113,19 +117,19 @@ build: image phase-disk phase-toolchain phase-packages phase-kernel phase-system
 
 phase-disk: image $(WATCHDOG_BIN)
 	@mkdir -p $(BUILD_DIR)/logs
-	$(HOST_GUARD) $(T_DISK) $(COMPOSE) run --rm builder $(RUNNER) /project/scripts/00-init-disk.sh
+	$(HOST_GUARD) $(T_DISK) $(COMPOSE) run --rm builder $(WD_IN) -i $(IDLE_STALL) -t $(T_DISK) -- $(RUNNER) /project/scripts/00-init-disk.sh
 
 phase-toolchain: image $(WATCHDOG_BIN)
-	$(HOST_GUARD) $(T_TOOLCHAIN) $(COMPOSE) run --rm builder $(RUNNER) /project/scripts/01-build-toolchain.sh
+	$(HOST_GUARD) $(T_TOOLCHAIN) $(COMPOSE) run --rm builder $(WD_IN) -i $(IDLE_STALL) -t $(T_TOOLCHAIN) -- $(RUNNER) /project/scripts/01-build-toolchain.sh
 
 phase-packages: image $(WATCHDOG_BIN)
-	$(HOST_GUARD) $(T_PACKAGES) $(COMPOSE) run --rm builder $(RUNNER) /project/scripts/02-build-system.sh
+	$(HOST_GUARD) $(T_PACKAGES) $(COMPOSE) run --rm builder $(WD_IN) -i $(IDLE_STALL) -t $(T_PACKAGES) -- $(RUNNER) /project/scripts/02-build-system.sh
 
 phase-kernel: image $(WATCHDOG_BIN)
-	$(HOST_GUARD) $(T_KERNEL) $(COMPOSE) run --rm builder $(RUNNER) /project/scripts/03-build-kernel.sh
+	$(HOST_GUARD) $(T_KERNEL) $(COMPOSE) run --rm builder $(WD_IN) -i $(IDLE_STALL) -t $(T_KERNEL) -- $(RUNNER) /project/scripts/03-build-kernel.sh
 
 phase-system: image $(WATCHDOG_BIN)
-	$(HOST_GUARD) $(T_SYSTEM) $(COMPOSE) run --rm builder $(RUNNER) /project/scripts/04-configure-system.sh
+	$(HOST_GUARD) $(T_SYSTEM) $(COMPOSE) run --rm builder $(WD_IN) -i $(IDLE_STALL) -t $(T_SYSTEM) -- $(RUNNER) /project/scripts/04-configure-system.sh
 
 # ----------------------------------------------------------------------------
 # QEMU boot — runs on host (needs KVM passthrough), no install required
@@ -180,6 +184,15 @@ check-hellish:
 # ----------------------------------------------------------------------------
 # Cleanup
 # ----------------------------------------------------------------------------
+# ----------------------------------------------------------------------------
+# Detach any loop devices bound to the disk image (backstop after a killed
+# phase). Runs in a privileged container — no host sudo, no host pollution.
+# ----------------------------------------------------------------------------
+.PHONY: loopclean
+loopclean:
+	@echo "==> Detaching any loop devices bound to $(IMAGE_NAME)…"
+	-$(COMPOSE) run --rm builder sh -c 'for d in $$(losetup -j /output/$(IMAGE_NAME) 2>/dev/null | cut -d: -f1); do echo "  detaching $$d"; kpartx -d "$$d" 2>/dev/null || true; losetup -d "$$d" 2>/dev/null || true; done; echo "  loopclean done"'
+
 .PHONY: clean distclean
 clean:
 	@echo "==> Removing build/ artifacts…"

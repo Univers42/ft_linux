@@ -134,6 +134,24 @@ detach_image() {
     losetup -d "$loop" 2>/dev/null || true
 }
 
+# -- Teardown on exit AND on signals -----------------------------------------
+# hellish does NOT run the EXIT trap on SIGTERM (verified), so a watchdog or
+# host-timeout kill would leak the loop device + mounts. Register TERM/INT
+# explicitly. _teardown is idempotent, so the TERM-then-EXIT double fire is safe.
+LFS_LOOP=""
+_teardown() {
+    umount -R "$LFS" 2>/dev/null || true
+    if [ -n "$LFS_LOOP" ]; then
+        detach_image "$LFS_LOOP" 2>/dev/null || true
+    fi
+}
+arm_cleanup() {
+    LFS_LOOP="$1"
+    trap '_teardown' EXIT
+    trap '_teardown; exit 143' TERM
+    trap '_teardown; exit 130' INT
+}
+
 # -- Source tarball helpers --------------------------------------------------
 # Sources are cached in /output/sources so re-runs don't redownload.
 SRC_CACHE=/output/sources

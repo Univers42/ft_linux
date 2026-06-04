@@ -26,7 +26,7 @@ phase_start "01-build-toolchain"
 # --------------------------------------------------------------------------
 info "Attaching disk image"
 LOOP="$(attach_image "$IMG_PATH")"
-trap 'umount -R "$LFS" 2>/dev/null || true; detach_image "$LOOP"' EXIT
+arm_cleanup "$LOOP"
 sleep 1
 
 mkdir -p "$LFS"

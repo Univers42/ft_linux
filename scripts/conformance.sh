@@ -60,5 +60,9 @@ chk 'brace-quoted-noexpand' 'echo "{a,b}"'
 chk 'pipefail' 'set -o pipefail; false | true; echo $?'
 chk 'set-e-simple' 'set -e; false; echo NOPE'
 chk 'param-default' 'echo "${z:-def}"; z=set; echo "${z:-def}"'
+chk 'exec-procsub-tee' 'exec > >(tee -a out.log) 2>&1; echo hello'
+chk 'set-e-pipeline' 'set -e; true | true | false; echo AFTER'
+chk 'cmdsub-trailing-newline' 'x="$(printf "a\n\n")"; printf "[%s]" "$x"'
+chk 'cmdsub-internal-newline' 'x="$(printf "a\nb\n")"; printf "[%s]" "$x"'
 echo "==> $fail divergence(s)."
 [[ "$fail" -eq 0 ]]
