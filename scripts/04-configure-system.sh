@@ -189,7 +189,7 @@ menuentry "ft_linux $KERNEL_FULL" {
     # No initramfs → the kernel cannot resolve root=LABEL= (that needs udev). The
     # QEMU virtio disk is /dev/vda, so root is its 4th partition. virtio-blk + GPT
     # + ext4 are built into the kernel (see 03-build-kernel.sh KOPTS).
-    linux /vmlinuz-$KERNEL_FULL root=/dev/vda4 ro console=ttyS0,115200 console=tty0
+    linux /vmlinuz-$KERNEL_FULL root=/dev/vda4 ro console=tty0 console=ttyS0,115200
     # initrd not used — we rely on built-in kernel drivers (defconfig + virtio).
 }
 EOF
