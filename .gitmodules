@@ -4,3 +4,27 @@
 [submodule "vendor/ft_malloc"]
 	path = vendor/ft_malloc
 	url = git@github.com:Univers42/ft_malloc.git
+[submodule "vendor/libft"]
+	path = vendor/libft
+	url = git@github.com:Univers42/libft.git
+[submodule "vendor/born2root"]
+	path = vendor/born2root
+	url = git@github.com:Univers42/born2root.git
+[submodule "vendor/scripts"]
+	path = vendor/scripts
+	url = git@github.com:Univers42/scripts.git
+[submodule "vendor/cc1"]
+	path = vendor/cc1
+	url = git@github.com:Univers42/cc1.git
+[submodule "vendor/ft_yacc"]
+	path = vendor/ft_yacc
+	url = git@github.com:Univers42/ft_yacc.git
+[submodule "vendor/ft_lex"]
+	path = vendor/ft_lex
+	url = git@github.com:Univers42/ft_lex.git
+[submodule "vendor/b_compiler"]
+	path = vendor/b_compiler
+	url = git@github.com:Univers42/b_compiler.git
+[submodule "vendor/libasm"]
+	path = vendor/libasm
+	url = git@github.com:Univers42/libasm.git
