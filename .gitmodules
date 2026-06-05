@@ -1,3 +1,6 @@
 [submodule "vendor/42sh"]
 	path = vendor/42sh
 	url = git@github.com:Univers42/42sh.git
+[submodule "vendor/ft_malloc"]
+	path = vendor/ft_malloc
+	url = git@github.com:Univers42/ft_malloc.git

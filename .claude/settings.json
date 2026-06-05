@@ -1,6 +1,7 @@
 {
   "permissions": {
     "allow": [
+      "mcp__playwright",
       "Bash(docker:*)",
       "Bash(docker compose:*)",
       "Bash(docker-compose:*)",
